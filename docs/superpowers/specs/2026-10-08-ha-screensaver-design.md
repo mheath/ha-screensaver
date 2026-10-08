@@ -101,7 +101,6 @@ The **world state** is the derived data the scenes need, never a dump of all HA 
 
 ```json
 {
-  "appVersion": "1.4.0+a1b2c3d",
   "haConnected": true,
   "generatedAt": "2026-10-08T17:05:00-06:00",
   "snakes": [ { "id": "internet-download", "value": 412.5, "available": true } ],
@@ -120,7 +119,7 @@ The **world state** is the derived data the scenes need, never a dump of all HA 
 
 - On connect it sends a `config` event (this kiosk's merged config, see §6.3) followed by a `state` event.
 - After that it sends a full `state` event whenever the world state changes, throttled to at most one per second per connection. The payload is small (a few KB), so full snapshots are simpler than patches.
-- Because config only changes on restart, and a restart drops and re-establishes the stream, kiosks pick up new config automatically.
+- A backend restart (deploy or config change) drops the stream. When it reconnects, the browser reloads the whole app (§4.3), so new code, new or removed scenes, and new config all take effect together. The browser never applies a changed config in place.
 
 ### 3.7 HTTP API
 
@@ -164,7 +163,7 @@ interface Scene {
 - Next scene = weighted random choice, excluding the scene just shown (unless it is the only candidate).
 - Transitions: ~1 s crossfade between scenes.
 - **Fault isolation:** if a scene throws during mount/update/unmount, the scheduler logs to the console, skips to the next scene, and sidelines that scene type for 10 minutes.
-- **Self-update:** when `state.appVersion` differs from the version the page loaded with, the page reloads itself at the next scene change.
+- **Reload on reconnect:** when the stream reconnects after having been connected before (not the first connect), the page reloads itself at the next scene change instead of picking another scene. The reload happens only if the stream is still connected at that moment, so Fully never loads the page while the backend is down. Restarts are the only way code or config changes, so this one rule covers deploys and config edits alike. A tablet Wi-Fi blip also causes a reload, which is harmless.
 
 ### 4.4 Scenes
 
@@ -220,11 +219,11 @@ A small, dim dot in a corner appears only when the stream is disconnected or `ha
 | Failure | Behavior |
 |---|---|
 | HA disconnected | Backend reconnects with backoff; last-known data keeps flowing with `haConnected: false`; status dot shows; unavailable snakes go gray. |
-| Backend down / restarting | Browser keeps rotating with its last state. Clock and weather keep working; photos use already-loaded images. SSE auto-reconnects and receives fresh config + state. |
+| Backend down / restarting | Browser keeps rotating with its last state. Clock and weather keep working; photos use already-loaded images. When SSE reconnects, the page reloads at the next scene change. |
 | Scene throws | Skipped and sidelined for 10 minutes; rotation continues. |
 | Bad or corrupt photo | Skipped and logged once. |
 | Invalid config | Startup fails with validation errors (visible in CI/container logs); kiosks ride it out on last state. |
-| New deploy | Kiosks detect the new `appVersion` and reload at the next scene change. |
+| New deploy or config change | The restart drops every stream; on reconnect each kiosk reloads at its next scene change, picking up new code, scenes, and config. |
 
 ## 6. Configuration reference
 
@@ -372,5 +371,5 @@ Defaults (`rotation.scenes`) merged with `kiosks.<id>.scenes` overrides, plus th
 - The image is built with `spring-boot:build-image` or a Dockerfile, whichever the CI pipeline uses.
 - Container volumes: NAS photo share (read-only), photo cache, config (if not using Spring Cloud Config).
 - The HA token comes from an env var or Docker secret.
-- `appVersion` = project version + git commit, exposed via Boot build info.
+- Project version + git commit are exposed via Boot build info (`/actuator/info`) for troubleshooting.
 - **Fully Kiosk:** set each tablet's screensaver URL to `https://<host>/?kiosk=<id>`; the timeout and schedule are set in Fully.
