@@ -80,6 +80,15 @@ public final class FakeHomeAssistant implements AutoCloseable {
 		this.handler.sessions.forEach((session) -> this.handler.send(session, event));
 	}
 
+	/** Stops answering anything, like a host that lost power without closing sockets. */
+	public void goSilent() {
+		this.handler.silent = true;
+	}
+
+	public void resume() {
+		this.handler.silent = false;
+	}
+
 	public void dropConnections() throws IOException {
 		for (WebSocketSession session : this.handler.sessions) {
 			session.close(CloseStatus.GOING_AWAY);
@@ -122,6 +131,8 @@ public final class FakeHomeAssistant implements AutoCloseable {
 
 		volatile int subscriptionId = -1;
 
+		volatile boolean silent;
+
 		@Override
 		public void afterConnectionEstablished(WebSocketSession session) {
 			this.sessions.add(session);
@@ -130,6 +141,9 @@ public final class FakeHomeAssistant implements AutoCloseable {
 
 		@Override
 		protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
+			if (this.silent) {
+				return;
+			}
 			JsonNode request = this.mapper.readTree(message.getPayload());
 			int id = request.path("id").asInt(0);
 			switch (request.path("type").asString("")) {
@@ -148,6 +162,7 @@ public final class FakeHomeAssistant implements AutoCloseable {
 					send(session, result(id, null));
 				}
 				case "get_states" -> send(session, result(id, this.states));
+				case "ping" -> send(session, Map.of("id", id, "type", "pong"));
 				default -> send(session, Map.of("id", id, "type", "result", "success", false, "error",
 						Map.of("code", "unknown_command", "message", "Unknown command.")));
 			}

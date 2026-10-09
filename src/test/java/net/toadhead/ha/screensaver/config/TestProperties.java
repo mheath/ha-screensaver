@@ -20,7 +20,7 @@ public final class TestProperties {
 
 	public static HomeAssistant homeAssistant() {
 		return new HomeAssistant(URI.create("ws://localhost:1/api/websocket"), "test-token", false,
-				Duration.ofSeconds(1), Duration.ofSeconds(60));
+				Duration.ofSeconds(1), Duration.ofSeconds(60), Duration.ofSeconds(30), Duration.ofSeconds(10));
 	}
 
 	public static Snake snake(String entity, String label) {

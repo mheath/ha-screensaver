@@ -50,6 +50,12 @@ final class HaSession {
 			}
 			case "auth_invalid" -> this.listener.onAuthFailed(message.path("message").asString(""));
 			case "result" -> complete(message);
+			case "pong" -> {
+				CompletableFuture<JsonNode> reply = this.pending.remove(message.path("id").asInt(-1));
+				if (reply != null) {
+					reply.complete(message);
+				}
+			}
 			case "event" -> onEvent(message);
 			default -> {
 			}

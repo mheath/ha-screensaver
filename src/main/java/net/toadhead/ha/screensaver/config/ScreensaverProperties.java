@@ -42,8 +42,21 @@ public record ScreensaverProperties(@Valid @NotNull HomeAssistant homeAssistant,
 		kiosks = (kiosks != null) ? kiosks : Map.of();
 	}
 
+	/**
+	 * Home Assistant connection settings.
+	 *
+	 * @param url WebSocket API URL
+	 * @param token long-lived access token
+	 * @param enabled whether to connect at all
+	 * @param initialBackoff first reconnect delay
+	 * @param maxBackoff longest reconnect delay
+	 * @param pingInterval how often to check that Home Assistant still answers
+	 * @param pingTimeout how long to wait for an answer (or for authentication)
+	 * before reconnecting
+	 */
 	public record HomeAssistant(@NotNull URI url, @NotBlank String token, @DefaultValue("true") boolean enabled,
-			@DefaultValue("1s") Duration initialBackoff, @DefaultValue("60s") Duration maxBackoff) {
+			@DefaultValue("1s") Duration initialBackoff, @DefaultValue("60s") Duration maxBackoff,
+			@DefaultValue("30s") Duration pingInterval, @DefaultValue("10s") Duration pingTimeout) {
 
 	}
 

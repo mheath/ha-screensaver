@@ -9,6 +9,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -80,7 +81,7 @@ public class HomeAssistantConnector implements SmartLifecycle {
 		this.reconnects.shutdownNow();
 		Connection current = this.connection;
 		if (current != null) {
-			current.abort();
+			current.abort("stopped");
 		}
 	}
 
@@ -147,10 +148,43 @@ public class HomeAssistantConnector implements SmartLifecycle {
 		/** The JDK WebSocket rejects a send while another is in flight, so sends are chained. */
 		private CompletableFuture<WebSocket> sending = CompletableFuture.completedFuture(null);
 
+		/**
+		 * Detects a connection that stays open but goes quiet (for example Home
+		 * Assistant losing power without closing the socket): first an
+		 * authentication deadline, then periodic pings.
+		 */
+		private volatile ScheduledFuture<?> watchdog;
+
+		private volatile boolean authenticated;
+
 		@Override
 		public void onOpen(WebSocket webSocket) {
 			this.socket = webSocket;
+			this.watchdog = schedule(() -> {
+				if (!this.authenticated) {
+					abort("no authentication reply within " + HomeAssistantConnector.this.config.pingTimeout());
+				}
+			}, HomeAssistantConnector.this.config.pingTimeout());
 			webSocket.request(1);
+		}
+
+		private void ping() {
+			this.session.request(HomeAssistantConnector.this.mapper.createObjectNode().put("type", "ping"))
+				.orTimeout(HomeAssistantConnector.this.config.pingTimeout().toMillis(), TimeUnit.MILLISECONDS)
+				.whenComplete((reply, error) -> {
+					if (error != null) {
+						abort("no ping reply within " + HomeAssistantConnector.this.config.pingTimeout());
+					}
+				});
+		}
+
+		private ScheduledFuture<?> schedule(Runnable task, Duration delay) {
+			try {
+				return HomeAssistantConnector.this.reconnects.schedule(task, delay.toMillis(), TimeUnit.MILLISECONDS);
+			}
+			catch (RejectedExecutionException ex) {
+				return null;
+			}
 		}
 
 		@Override
@@ -186,17 +220,21 @@ public class HomeAssistantConnector implements SmartLifecycle {
 			this.sending = this.sending.exceptionally((ex) -> null).thenCompose((ignored) -> target.sendText(text, true));
 		}
 
-		void abort() {
+		void abort(String why) {
 			WebSocket target = this.socket;
 			if (target != null) {
 				target.abort();
 			}
-			closed("stopped");
+			closed(why);
 		}
 
 		void closed(String why) {
 			if (!this.closed.compareAndSet(false, true)) {
 				return;
+			}
+			ScheduledFuture<?> pending = this.watchdog;
+			if (pending != null) {
+				pending.cancel(false);
 			}
 			this.session.close();
 			if (HomeAssistantConnector.this.connection == this && HomeAssistantConnector.this.state.connected()) {
@@ -211,6 +249,19 @@ public class HomeAssistantConnector implements SmartLifecycle {
 
 		@Override
 		public void onAuthenticated() {
+			this.authenticated = true;
+			Duration interval = HomeAssistantConnector.this.config.pingInterval();
+			ScheduledFuture<?> deadline = this.watchdog;
+			if (deadline != null) {
+				deadline.cancel(false);
+			}
+			try {
+				this.watchdog = HomeAssistantConnector.this.reconnects.scheduleWithFixedDelay(this::ping,
+						interval.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS);
+			}
+			catch (RejectedExecutionException ex) {
+				// Shutting down.
+			}
 			resetBackoff();
 			logger.info("Authenticated with Home Assistant at {}", HomeAssistantConnector.this.config.url());
 		}
@@ -218,7 +269,7 @@ public class HomeAssistantConnector implements SmartLifecycle {
 		@Override
 		public void onAuthFailed(String message) {
 			logger.error("Home Assistant rejected the access token: {}", message);
-			abort();
+			abort("authentication failed");
 		}
 
 		@Override

@@ -81,10 +81,29 @@ class HomeAssistantConnectorTests {
 		assertThat(this.state.connected()).isFalse();
 	}
 
+	@Test
+	void reconnectsWhenHomeAssistantStopsAnswering() {
+		start(List.of(FakeHomeAssistant.entity("sensor.power", "1", Map.of())), FakeHomeAssistant.TOKEN);
+		await(this.state::connected, "connected");
+		this.fake.goSilent();
+		await(() -> !this.state.connected(), "silent connection detected");
+		this.fake.resume();
+		await(() -> this.fake.authAttempts() >= 2 && this.state.connected(), "reconnected after silence");
+	}
+
+	@Test
+	void keepsAHealthyConnection() throws InterruptedException {
+		start(List.of(FakeHomeAssistant.entity("sensor.power", "1", Map.of())), FakeHomeAssistant.TOKEN);
+		await(this.state::connected, "connected");
+		Thread.sleep(1000);
+		assertThat(this.state.connected()).isTrue();
+		assertThat(this.fake.authAttempts()).isEqualTo(1);
+	}
+
 	private void start(List<Map<String, Object>> states, String token) {
 		this.fake = FakeHomeAssistant.start(states);
 		var config = new ScreensaverProperties.HomeAssistant(this.fake.uri(), token, true, Duration.ofMillis(50),
-				Duration.ofMillis(200));
+				Duration.ofMillis(200), Duration.ofMillis(100), Duration.ofMillis(300));
 		this.connector = new HomeAssistantConnector(config, this.state, (event) -> this.updates.incrementAndGet(),
 				JsonMapper.shared());
 		this.connector.start();
