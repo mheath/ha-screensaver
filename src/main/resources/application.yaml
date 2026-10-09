@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: ha-screensaver
+  web:
+    resources:
+      cache:
+        cachecontrol:
+          # Kiosks reload after every deploy; they must never reuse a stale index.html.
+          no-cache: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  info:
+    git:
+      mode: simple
