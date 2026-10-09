@@ -14,7 +14,7 @@
 
 ## Global Constraints
 
-- Base package `ha.screensaver`; Maven coordinates `ha:ha-screensaver`; build with the Maven wrapper `./mvnw`.
+- Base package `net.toadhead.ha.screensaver`; Maven coordinates `net.toadhead.ha:ha-screensaver`; build with the Maven wrapper `./mvnw`.
 - Spring Boot 4.1.1 uses **Jackson 3**: classes are `tools.jackson.databind.*` (`JsonMapper`, `JsonNode`, `ObjectNode`); annotations stay `com.fasterxml.jackson.annotation.*`. Use `asString("")` and `asInt(default)` (the defaulted forms), never `asText()`.
 - Configuration is plain `@ConfigurationProperties("screensaver")` records, `@Validated`, flat (no polymorphism). Config is bound once; changes apply on restart.
 - Palette names (exactly): `black, blue, green, cyan, red, magenta, brown, light-gray, dark-gray, light-blue, light-green, light-cyan, light-red, light-magenta, yellow, white`. `black` is rejected for snakes. Pinned count + `guest-count` ≤ 15.
@@ -38,10 +38,10 @@
 
 **Files:**
 - Create (generated): `pom.xml`, `mvnw`, `mvnw.cmd`, `.mvn/wrapper/maven-wrapper.properties`, `.gitattributes`, `.gitignore`
-- Create: `src/main/java/ha/screensaver/HaScreensaverApplication.java`
+- Create: `src/main/java/net/toadhead/ha/screensaver/HaScreensaverApplication.java`
 - Create: `src/main/resources/application.yaml`
 - Create: `src/test/resources/static/cache-probe.txt`
-- Test: `src/test/java/ha/screensaver/WebEndpointsTests.java`
+- Test: `src/test/java/net/toadhead/ha/screensaver/WebEndpointsTests.java`
 
 **Interfaces:**
 - Produces: runnable Boot app with `@ConfigurationPropertiesScan` and `@EnableScheduling`; `/actuator/health`, `/actuator/info`; static resources with `Cache-Control: no-cache`.
@@ -52,12 +52,12 @@
 cd /home/mheath/workspace/ha-screensaver
 curl -s https://start.spring.io/starter.tgz \
   -d type=maven-project -d bootVersion=4.1.1 -d javaVersion=25 \
-  -d groupId=ha -d artifactId=ha-screensaver -d name=ha-screensaver \
-  -d packageName=ha.screensaver \
+  -d groupId=net.toadhead.ha -d artifactId=ha-screensaver -d name=ha-screensaver \
+  -d packageName=net.toadhead.ha.screensaver \
   -d dependencies=web,validation,actuator,configuration-processor,websocket \
   | tar xz
 rm -f HELP.md src/main/resources/application.properties
-rm -f src/test/java/ha/screensaver/HaScreensaverApplicationTests.java
+rm -f src/test/java/net/toadhead/ha/screensaver/HaScreensaverApplicationTests.java
 ```
 
 - [ ] **Step 2: Edit `pom.xml`**
@@ -90,10 +90,10 @@ Make these changes to the generated file:
 
 - [ ] **Step 3: Write the application class**
 
-`src/main/java/ha/screensaver/HaScreensaverApplication.java`:
+`src/main/java/net/toadhead/ha/screensaver/HaScreensaverApplication.java`:
 
 ```java
-package ha.screensaver;
+package net.toadhead.ha.screensaver;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -143,10 +143,10 @@ management:
 probe
 ```
 
-`src/test/java/ha/screensaver/WebEndpointsTests.java`:
+`src/test/java/net/toadhead/ha/screensaver/WebEndpointsTests.java`:
 
 ```java
-package ha.screensaver;
+package net.toadhead.ha.screensaver;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -486,12 +486,12 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 ### Task 3: Configuration properties
 
 **Files:**
-- Create: `src/main/java/ha/screensaver/config/TextModeColor.java`
-- Create: `src/main/java/ha/screensaver/config/SceneType.java`
-- Create: `src/main/java/ha/screensaver/config/ScreensaverProperties.java`
+- Create: `src/main/java/net/toadhead/ha/screensaver/config/TextModeColor.java`
+- Create: `src/main/java/net/toadhead/ha/screensaver/config/SceneType.java`
+- Create: `src/main/java/net/toadhead/ha/screensaver/config/ScreensaverProperties.java`
 - Create: `src/test/resources/config/application.yaml`
-- Create: `src/test/java/ha/screensaver/config/TestProperties.java`
-- Test: `src/test/java/ha/screensaver/config/ScreensaverPropertiesTests.java`
+- Create: `src/test/java/net/toadhead/ha/screensaver/config/TestProperties.java`
+- Test: `src/test/java/net/toadhead/ha/screensaver/config/ScreensaverPropertiesTests.java`
 
 **Interfaces:**
 - Produces:
@@ -522,10 +522,10 @@ screensaver:
 
 - [ ] **Step 2: Write the failing tests**
 
-`src/test/java/ha/screensaver/config/ScreensaverPropertiesTests.java`:
+`src/test/java/net/toadhead/ha/screensaver/config/ScreensaverPropertiesTests.java`:
 
 ```java
-package ha.screensaver.config;
+package net.toadhead.ha.screensaver.config;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -693,10 +693,10 @@ Expected: compilation FAILURE — `ScreensaverProperties` does not exist.
 
 - [ ] **Step 4: Implement the enums**
 
-`src/main/java/ha/screensaver/config/TextModeColor.java`:
+`src/main/java/net/toadhead/ha/screensaver/config/TextModeColor.java`:
 
 ```java
-package ha.screensaver.config;
+package net.toadhead.ha.screensaver.config;
 
 import java.util.Locale;
 
@@ -723,10 +723,10 @@ public enum TextModeColor {
 }
 ```
 
-`src/main/java/ha/screensaver/config/SceneType.java`:
+`src/main/java/net/toadhead/ha/screensaver/config/SceneType.java`:
 
 ```java
-package ha.screensaver.config;
+package net.toadhead.ha.screensaver.config;
 
 import java.time.Duration;
 import java.util.Locale;
@@ -770,10 +770,10 @@ public enum SceneType {
 
 - [ ] **Step 5: Implement the properties record**
 
-`src/main/java/ha/screensaver/config/ScreensaverProperties.java`:
+`src/main/java/net/toadhead/ha/screensaver/config/ScreensaverProperties.java`:
 
 ```java
-package ha.screensaver.config;
+package net.toadhead.ha.screensaver.config;
 
 import java.net.URI;
 import java.time.Duration;
@@ -941,20 +941,20 @@ Expected: PASS (13 tests). If `bindsSnakesClockRotationAndKiosks` fails only on 
 
 - [ ] **Step 7: Add the shared test helper**
 
-`src/test/java/ha/screensaver/config/TestProperties.java`:
+`src/test/java/net/toadhead/ha/screensaver/config/TestProperties.java`:
 
 ```java
-package ha.screensaver.config;
+package net.toadhead.ha.screensaver.config;
 
 import java.net.URI;
 import java.time.Duration;
 import java.util.Map;
 
-import ha.screensaver.config.ScreensaverProperties.Clock;
-import ha.screensaver.config.ScreensaverProperties.HomeAssistant;
-import ha.screensaver.config.ScreensaverProperties.Rotation;
-import ha.screensaver.config.ScreensaverProperties.Snake;
-import ha.screensaver.config.ScreensaverProperties.Snakes;
+import net.toadhead.ha.screensaver.config.ScreensaverProperties.Clock;
+import net.toadhead.ha.screensaver.config.ScreensaverProperties.HomeAssistant;
+import net.toadhead.ha.screensaver.config.ScreensaverProperties.Rotation;
+import net.toadhead.ha.screensaver.config.ScreensaverProperties.Snake;
+import net.toadhead.ha.screensaver.config.ScreensaverProperties.Snakes;
 
 /**
  * Builds {@link ScreensaverProperties} for unit tests without Spring.
@@ -1000,9 +1000,9 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 ### Task 4: Kiosk config resolution
 
 **Files:**
-- Create: `src/main/java/ha/screensaver/kiosk/KioskConfig.java`
-- Create: `src/main/java/ha/screensaver/kiosk/KioskConfigService.java`
-- Test: `src/test/java/ha/screensaver/kiosk/KioskConfigServiceTests.java`
+- Create: `src/main/java/net/toadhead/ha/screensaver/kiosk/KioskConfig.java`
+- Create: `src/main/java/net/toadhead/ha/screensaver/kiosk/KioskConfigService.java`
+- Test: `src/test/java/net/toadhead/ha/screensaver/kiosk/KioskConfigServiceTests.java`
 
 **Interfaces:**
 - Consumes: `ScreensaverProperties`, `SceneType`, `TextModeColor` (Task 3).
@@ -1012,26 +1012,26 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 
 - [ ] **Step 1: Write the failing tests**
 
-`src/test/java/ha/screensaver/kiosk/KioskConfigServiceTests.java`:
+`src/test/java/net/toadhead/ha/screensaver/kiosk/KioskConfigServiceTests.java`:
 
 ```java
-package ha.screensaver.kiosk;
+package net.toadhead.ha.screensaver.kiosk;
 
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import ha.screensaver.config.SceneType;
-import ha.screensaver.config.ScreensaverProperties;
-import ha.screensaver.config.ScreensaverProperties.Clock;
-import ha.screensaver.config.ScreensaverProperties.Kiosk;
-import ha.screensaver.config.ScreensaverProperties.Rotation;
-import ha.screensaver.config.ScreensaverProperties.SceneSettings;
-import ha.screensaver.config.ScreensaverProperties.Snake;
-import ha.screensaver.config.ScreensaverProperties.Snakes;
-import ha.screensaver.config.TestProperties;
-import ha.screensaver.config.TextModeColor;
-import ha.screensaver.kiosk.KioskConfig.SceneConfig;
+import net.toadhead.ha.screensaver.config.SceneType;
+import net.toadhead.ha.screensaver.config.ScreensaverProperties;
+import net.toadhead.ha.screensaver.config.ScreensaverProperties.Clock;
+import net.toadhead.ha.screensaver.config.ScreensaverProperties.Kiosk;
+import net.toadhead.ha.screensaver.config.ScreensaverProperties.Rotation;
+import net.toadhead.ha.screensaver.config.ScreensaverProperties.SceneSettings;
+import net.toadhead.ha.screensaver.config.ScreensaverProperties.Snake;
+import net.toadhead.ha.screensaver.config.ScreensaverProperties.Snakes;
+import net.toadhead.ha.screensaver.config.TestProperties;
+import net.toadhead.ha.screensaver.config.TextModeColor;
+import net.toadhead.ha.screensaver.kiosk.KioskConfig.SceneConfig;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -1128,15 +1128,15 @@ Expected: compilation FAILURE — `KioskConfig` does not exist.
 
 - [ ] **Step 3: Implement**
 
-`src/main/java/ha/screensaver/kiosk/KioskConfig.java`:
+`src/main/java/net/toadhead/ha/screensaver/kiosk/KioskConfig.java`:
 
 ```java
-package ha.screensaver.kiosk;
+package net.toadhead.ha.screensaver.kiosk;
 
 import java.util.List;
 
-import ha.screensaver.config.SceneType;
-import ha.screensaver.config.TextModeColor;
+import net.toadhead.ha.screensaver.config.SceneType;
+import net.toadhead.ha.screensaver.config.TextModeColor;
 
 /**
  * Everything one kiosk's browser needs to run its rotation. Sent as the stream's
@@ -1170,10 +1170,10 @@ public record KioskConfig(String kiosk, List<SceneConfig> scenes, ClockOptions c
 }
 ```
 
-`src/main/java/ha/screensaver/kiosk/KioskConfigService.java`:
+`src/main/java/net/toadhead/ha/screensaver/kiosk/KioskConfigService.java`:
 
 ```java
-package ha.screensaver.kiosk;
+package net.toadhead.ha.screensaver.kiosk;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -1181,15 +1181,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import ha.screensaver.config.SceneType;
-import ha.screensaver.config.ScreensaverProperties;
-import ha.screensaver.config.ScreensaverProperties.Kiosk;
-import ha.screensaver.config.ScreensaverProperties.SceneSettings;
-import ha.screensaver.config.ScreensaverProperties.Snake;
-import ha.screensaver.kiosk.KioskConfig.ClockOptions;
-import ha.screensaver.kiosk.KioskConfig.SceneConfig;
-import ha.screensaver.kiosk.KioskConfig.SnakeDef;
-import ha.screensaver.kiosk.KioskConfig.SnakeOptions;
+import net.toadhead.ha.screensaver.config.SceneType;
+import net.toadhead.ha.screensaver.config.ScreensaverProperties;
+import net.toadhead.ha.screensaver.config.ScreensaverProperties.Kiosk;
+import net.toadhead.ha.screensaver.config.ScreensaverProperties.SceneSettings;
+import net.toadhead.ha.screensaver.config.ScreensaverProperties.Snake;
+import net.toadhead.ha.screensaver.kiosk.KioskConfig.ClockOptions;
+import net.toadhead.ha.screensaver.kiosk.KioskConfig.SceneConfig;
+import net.toadhead.ha.screensaver.kiosk.KioskConfig.SnakeDef;
+import net.toadhead.ha.screensaver.kiosk.KioskConfig.SnakeOptions;
 
 import org.springframework.stereotype.Service;
 
@@ -1285,13 +1285,13 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 ### Task 5: Home Assistant protocol session and state store
 
 **Files:**
-- Create: `src/main/java/ha/screensaver/ha/EntityState.java`
-- Create: `src/main/java/ha/screensaver/ha/HomeAssistantState.java`
-- Create: `src/main/java/ha/screensaver/ha/HomeAssistantUpdated.java`
-- Create: `src/main/java/ha/screensaver/ha/HaRequestException.java`
-- Create: `src/main/java/ha/screensaver/ha/HaSession.java`
-- Test: `src/test/java/ha/screensaver/ha/HaSessionTests.java`
-- Test: `src/test/java/ha/screensaver/ha/HomeAssistantStateTests.java`
+- Create: `src/main/java/net/toadhead/ha/screensaver/ha/EntityState.java`
+- Create: `src/main/java/net/toadhead/ha/screensaver/ha/HomeAssistantState.java`
+- Create: `src/main/java/net/toadhead/ha/screensaver/ha/HomeAssistantUpdated.java`
+- Create: `src/main/java/net/toadhead/ha/screensaver/ha/HaRequestException.java`
+- Create: `src/main/java/net/toadhead/ha/screensaver/ha/HaSession.java`
+- Test: `src/test/java/net/toadhead/ha/screensaver/ha/HaSessionTests.java`
+- Test: `src/test/java/net/toadhead/ha/screensaver/ha/HomeAssistantStateTests.java`
 
 **Interfaces:**
 - Produces:
@@ -1305,10 +1305,10 @@ Home Assistant WebSocket protocol summary (for reference):
 
 - [ ] **Step 1: Write the failing session tests**
 
-`src/test/java/ha/screensaver/ha/HaSessionTests.java`:
+`src/test/java/net/toadhead/ha/screensaver/ha/HaSessionTests.java`:
 
 ```java
-package ha.screensaver.ha;
+package net.toadhead.ha.screensaver.ha;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -1461,10 +1461,10 @@ class HaSessionTests {
 }
 ```
 
-`src/test/java/ha/screensaver/ha/HomeAssistantStateTests.java`:
+`src/test/java/net/toadhead/ha/screensaver/ha/HomeAssistantStateTests.java`:
 
 ```java
-package ha.screensaver.ha;
+package net.toadhead.ha.screensaver.ha;
 
 import java.time.Instant;
 import java.util.List;
@@ -1524,10 +1524,10 @@ Expected: compilation FAILURE — `HaSession`, `EntityState` do not exist.
 
 - [ ] **Step 3: Implement the state types**
 
-`src/main/java/ha/screensaver/ha/EntityState.java`:
+`src/main/java/net/toadhead/ha/screensaver/ha/EntityState.java`:
 
 ```java
-package ha.screensaver.ha;
+package net.toadhead.ha.screensaver.ha;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -1559,10 +1559,10 @@ public record EntityState(String entityId, String state, JsonNode attributes, In
 }
 ```
 
-`src/main/java/ha/screensaver/ha/HomeAssistantState.java`:
+`src/main/java/net/toadhead/ha/screensaver/ha/HomeAssistantState.java`:
 
 ```java
-package ha.screensaver.ha;
+package net.toadhead.ha.screensaver.ha;
 
 import java.util.Collection;
 import java.util.Map;
@@ -1613,10 +1613,10 @@ public class HomeAssistantState {
 }
 ```
 
-`src/main/java/ha/screensaver/ha/HomeAssistantUpdated.java`:
+`src/main/java/net/toadhead/ha/screensaver/ha/HomeAssistantUpdated.java`:
 
 ```java
-package ha.screensaver.ha;
+package net.toadhead.ha.screensaver.ha;
 
 /**
  * Published after any change to {@link HomeAssistantState}.
@@ -1626,10 +1626,10 @@ public record HomeAssistantUpdated() {
 }
 ```
 
-`src/main/java/ha/screensaver/ha/HaRequestException.java`:
+`src/main/java/net/toadhead/ha/screensaver/ha/HaRequestException.java`:
 
 ```java
-package ha.screensaver.ha;
+package net.toadhead.ha.screensaver.ha;
 
 /**
  * A Home Assistant WebSocket request that failed or could not complete.
@@ -1645,10 +1645,10 @@ public class HaRequestException extends RuntimeException {
 
 - [ ] **Step 4: Implement the session**
 
-`src/main/java/ha/screensaver/ha/HaSession.java`:
+`src/main/java/net/toadhead/ha/screensaver/ha/HaSession.java`:
 
 ```java
-package ha.screensaver.ha;
+package net.toadhead.ha.screensaver.ha;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -1800,15 +1800,15 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 ### Task 6: Home Assistant connector (WebSocket transport and reconnect)
 
 **Files:**
-- Create: `src/main/java/ha/screensaver/ha/HomeAssistantConnector.java`
+- Create: `src/main/java/net/toadhead/ha/screensaver/ha/HomeAssistantConnector.java`
 - Create: `src/test/java/fakeha/FakeHomeAssistant.java`
-- Test: `src/test/java/ha/screensaver/ha/HomeAssistantConnectorTests.java`
+- Test: `src/test/java/net/toadhead/ha/screensaver/ha/HomeAssistantConnectorTests.java`
 
 **Interfaces:**
 - Consumes: `ScreensaverProperties.HomeAssistant`, `HomeAssistantState`, `HomeAssistantUpdated`, `HaSession` (Tasks 3, 5); Spring's auto-configured `JsonMapper` bean.
 - Produces: `@Component HomeAssistantConnector implements SmartLifecycle`, active unless `screensaver.home-assistant.enabled=false`. Keeps `HomeAssistantState` current and publishes `HomeAssistantUpdated` after every change. Package-private constructor `HomeAssistantConnector(ScreensaverProperties.HomeAssistant, HomeAssistantState, ApplicationEventPublisher, JsonMapper)` for tests.
 
-Test-only `fakeha.FakeHomeAssistant` (outside `ha.screensaver` so the app never scans it): `static FakeHomeAssistant start(List<Map<String,Object>> states)`, `URI uri()`, `int authAttempts()`, `void pushStateChange(String entityId, String state)`, `void dropConnections()`, `close()`; `TOKEN = "good-token"`.
+Test-only `fakeha.FakeHomeAssistant` (outside `net.toadhead.ha.screensaver` so the app never scans it): `static FakeHomeAssistant start(List<Map<String,Object>> states)`, `URI uri()`, `int authAttempts()`, `void pushStateChange(String entityId, String state)`, `void dropConnections()`, `close()`; `TOKEN = "good-token"`.
 
 - [ ] **Step 1: Write the fake Home Assistant server**
 
@@ -2000,10 +2000,10 @@ public final class FakeHomeAssistant implements AutoCloseable {
 
 - [ ] **Step 2: Write the failing connector tests**
 
-`src/test/java/ha/screensaver/ha/HomeAssistantConnectorTests.java`:
+`src/test/java/net/toadhead/ha/screensaver/ha/HomeAssistantConnectorTests.java`:
 
 ```java
-package ha.screensaver.ha;
+package net.toadhead.ha.screensaver.ha;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -2013,7 +2013,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 
 import fakeha.FakeHomeAssistant;
-import ha.screensaver.config.ScreensaverProperties;
+import net.toadhead.ha.screensaver.config.ScreensaverProperties;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;
@@ -2122,10 +2122,10 @@ Expected: compilation FAILURE — `HomeAssistantConnector` does not exist.
 
 - [ ] **Step 4: Implement the connector**
 
-`src/main/java/ha/screensaver/ha/HomeAssistantConnector.java`:
+`src/main/java/net/toadhead/ha/screensaver/ha/HomeAssistantConnector.java`:
 
 ```java
-package ha.screensaver.ha;
+package net.toadhead.ha.screensaver.ha;
 
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
@@ -2143,7 +2143,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tools.jackson.databind.json.JsonMapper;
 
-import ha.screensaver.config.ScreensaverProperties;
+import net.toadhead.ha.screensaver.config.ScreensaverProperties;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
@@ -2396,11 +2396,11 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 ### Task 7: World state
 
 **Files:**
-- Create: `src/main/java/ha/screensaver/stream/WorldState.java`
-- Create: `src/main/java/ha/screensaver/stream/WorldStateAssembler.java`
-- Create: `src/main/java/ha/screensaver/stream/WorldStateService.java`
-- Test: `src/test/java/ha/screensaver/stream/WorldStateAssemblerTests.java`
-- Test: `src/test/java/ha/screensaver/stream/WorldStateServiceTests.java`
+- Create: `src/main/java/net/toadhead/ha/screensaver/stream/WorldState.java`
+- Create: `src/main/java/net/toadhead/ha/screensaver/stream/WorldStateAssembler.java`
+- Create: `src/main/java/net/toadhead/ha/screensaver/stream/WorldStateService.java`
+- Test: `src/test/java/net/toadhead/ha/screensaver/stream/WorldStateAssemblerTests.java`
+- Test: `src/test/java/net/toadhead/ha/screensaver/stream/WorldStateServiceTests.java`
 
 **Interfaces:**
 - Consumes: `ScreensaverProperties` (Task 3), `HomeAssistantState`, `EntityState`, `HomeAssistantUpdated` (Task 5), `TestProperties` (test).
@@ -2411,22 +2411,22 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 
 - [ ] **Step 1: Write the failing tests**
 
-`src/test/java/ha/screensaver/stream/WorldStateAssemblerTests.java`:
+`src/test/java/net/toadhead/ha/screensaver/stream/WorldStateAssemblerTests.java`:
 
 ```java
-package ha.screensaver.stream;
+package net.toadhead.ha.screensaver.stream;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import ha.screensaver.config.ScreensaverProperties;
-import ha.screensaver.config.ScreensaverProperties.Snake;
-import ha.screensaver.config.TestProperties;
-import ha.screensaver.ha.EntityState;
-import ha.screensaver.ha.HomeAssistantState;
-import ha.screensaver.stream.WorldState.SnakeValue;
+import net.toadhead.ha.screensaver.config.ScreensaverProperties;
+import net.toadhead.ha.screensaver.config.ScreensaverProperties.Snake;
+import net.toadhead.ha.screensaver.config.TestProperties;
+import net.toadhead.ha.screensaver.ha.EntityState;
+import net.toadhead.ha.screensaver.ha.HomeAssistantState;
+import net.toadhead.ha.screensaver.stream.WorldState.SnakeValue;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -2498,17 +2498,17 @@ class WorldStateAssemblerTests {
 }
 ```
 
-`src/test/java/ha/screensaver/stream/WorldStateServiceTests.java`:
+`src/test/java/net/toadhead/ha/screensaver/stream/WorldStateServiceTests.java`:
 
 ```java
-package ha.screensaver.stream;
+package net.toadhead.ha.screensaver.stream;
 
 import java.util.List;
 import java.util.Map;
 
-import ha.screensaver.config.TestProperties;
-import ha.screensaver.ha.HomeAssistantState;
-import ha.screensaver.ha.HomeAssistantUpdated;
+import net.toadhead.ha.screensaver.config.TestProperties;
+import net.toadhead.ha.screensaver.ha.HomeAssistantState;
+import net.toadhead.ha.screensaver.ha.HomeAssistantUpdated;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -2554,10 +2554,10 @@ Expected: compilation FAILURE — `WorldState` does not exist.
 
 - [ ] **Step 3: Implement**
 
-`src/main/java/ha/screensaver/stream/WorldState.java`:
+`src/main/java/net/toadhead/ha/screensaver/stream/WorldState.java`:
 
 ```java
-package ha.screensaver.stream;
+package net.toadhead.ha.screensaver.stream;
 
 import java.util.List;
 
@@ -2585,21 +2585,21 @@ public record WorldState(boolean haConnected, List<SnakeValue> snakes) {
 }
 ```
 
-`src/main/java/ha/screensaver/stream/WorldStateAssembler.java`:
+`src/main/java/net/toadhead/ha/screensaver/stream/WorldStateAssembler.java`:
 
 ```java
-package ha.screensaver.stream;
+package net.toadhead.ha.screensaver.stream;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import ha.screensaver.config.ScreensaverProperties;
-import ha.screensaver.config.ScreensaverProperties.Snake;
-import ha.screensaver.ha.EntityState;
-import ha.screensaver.ha.HomeAssistantState;
-import ha.screensaver.stream.WorldState.SnakeValue;
+import net.toadhead.ha.screensaver.config.ScreensaverProperties;
+import net.toadhead.ha.screensaver.config.ScreensaverProperties.Snake;
+import net.toadhead.ha.screensaver.ha.EntityState;
+import net.toadhead.ha.screensaver.ha.HomeAssistantState;
+import net.toadhead.ha.screensaver.stream.WorldState.SnakeValue;
 
 /**
  * Derives {@link WorldState} from configuration and Home Assistant state.
@@ -2637,14 +2637,14 @@ final class WorldStateAssembler {
 }
 ```
 
-`src/main/java/ha/screensaver/stream/WorldStateService.java`:
+`src/main/java/net/toadhead/ha/screensaver/stream/WorldStateService.java`:
 
 ```java
-package ha.screensaver.stream;
+package net.toadhead.ha.screensaver.stream;
 
-import ha.screensaver.config.ScreensaverProperties;
-import ha.screensaver.ha.HomeAssistantState;
-import ha.screensaver.ha.HomeAssistantUpdated;
+import net.toadhead.ha.screensaver.config.ScreensaverProperties;
+import net.toadhead.ha.screensaver.ha.HomeAssistantState;
+import net.toadhead.ha.screensaver.ha.HomeAssistantUpdated;
 
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -2710,10 +2710,10 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 ### Task 8: SSE stream
 
 **Files:**
-- Create: `src/main/java/ha/screensaver/stream/StreamBroadcaster.java`
-- Create: `src/main/java/ha/screensaver/stream/StreamController.java`
-- Test: `src/test/java/ha/screensaver/stream/StreamBroadcasterTests.java`
-- Test: `src/test/java/ha/screensaver/stream/StreamControllerTests.java`
+- Create: `src/main/java/net/toadhead/ha/screensaver/stream/StreamBroadcaster.java`
+- Create: `src/main/java/net/toadhead/ha/screensaver/stream/StreamController.java`
+- Test: `src/test/java/net/toadhead/ha/screensaver/stream/StreamBroadcasterTests.java`
+- Test: `src/test/java/net/toadhead/ha/screensaver/stream/StreamControllerTests.java`
 
 **Interfaces:**
 - Consumes: `WorldStateService` (Task 7), `KioskConfigService`/`KioskConfig` (Task 4), `HomeAssistantState`, `HomeAssistantUpdated`, `EntityState` (Task 5).
@@ -2723,20 +2723,20 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 
 - [ ] **Step 1: Write the failing broadcaster tests**
 
-`src/test/java/ha/screensaver/stream/StreamBroadcasterTests.java`:
+`src/test/java/net/toadhead/ha/screensaver/stream/StreamBroadcasterTests.java`:
 
 ```java
-package ha.screensaver.stream;
+package net.toadhead.ha.screensaver.stream;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import ha.screensaver.config.TestProperties;
-import ha.screensaver.ha.HomeAssistantState;
-import ha.screensaver.ha.HomeAssistantUpdated;
-import ha.screensaver.kiosk.KioskConfig;
+import net.toadhead.ha.screensaver.config.TestProperties;
+import net.toadhead.ha.screensaver.ha.HomeAssistantState;
+import net.toadhead.ha.screensaver.ha.HomeAssistantUpdated;
+import net.toadhead.ha.screensaver.kiosk.KioskConfig;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -2851,10 +2851,10 @@ class StreamBroadcasterTests {
 
 - [ ] **Step 2: Write the failing end-to-end stream test**
 
-`src/test/java/ha/screensaver/stream/StreamControllerTests.java`:
+`src/test/java/net/toadhead/ha/screensaver/stream/StreamControllerTests.java`:
 
 ```java
-package ha.screensaver.stream;
+package net.toadhead.ha.screensaver.stream;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -2869,8 +2869,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import ha.screensaver.ha.HomeAssistantState;
-import ha.screensaver.ha.HomeAssistantUpdated;
+import net.toadhead.ha.screensaver.ha.HomeAssistantState;
+import net.toadhead.ha.screensaver.ha.HomeAssistantUpdated;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -2996,16 +2996,16 @@ Expected: compilation FAILURE — `StreamBroadcaster` does not exist.
 
 - [ ] **Step 4: Implement**
 
-`src/main/java/ha/screensaver/stream/StreamBroadcaster.java`:
+`src/main/java/net/toadhead/ha/screensaver/stream/StreamBroadcaster.java`:
 
 ```java
-package ha.screensaver.stream;
+package net.toadhead.ha.screensaver.stream;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import ha.screensaver.kiosk.KioskConfig;
+import net.toadhead.ha.screensaver.kiosk.KioskConfig;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -3083,14 +3083,14 @@ public class StreamBroadcaster {
 }
 ```
 
-`src/main/java/ha/screensaver/stream/StreamController.java`:
+`src/main/java/net/toadhead/ha/screensaver/stream/StreamController.java`:
 
 ```java
-package ha.screensaver.stream;
+package net.toadhead.ha.screensaver.stream;
 
 import java.io.IOException;
 
-import ha.screensaver.kiosk.KioskConfigService;
+import net.toadhead.ha.screensaver.kiosk.KioskConfigService;
 
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -3187,7 +3187,7 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 ```ts
 import type { PaletteName } from './palette';
 
-/** Matches ha.screensaver.config.SceneType ids. */
+/** Matches net.toadhead.ha.screensaver.config.SceneType ids. */
 export type SceneType = 'clock' | 'snakes';
 
 export interface SceneConfig {
@@ -3217,7 +3217,7 @@ export interface SnakeOptions {
   guests: SnakeDef[];
 }
 
-/** The stream's `config` event (ha.screensaver.kiosk.KioskConfig). */
+/** The stream's `config` event (net.toadhead.ha.screensaver.kiosk.KioskConfig). */
 export interface KioskConfig {
   kiosk: string;
   scenes: SceneConfig[];
@@ -3232,7 +3232,7 @@ export interface SnakeValue {
   available: boolean;
 }
 
-/** The stream's `state` event (ha.screensaver.stream.WorldState). */
+/** The stream's `state` event (net.toadhead.ha.screensaver.stream.WorldState). */
 export interface WorldState {
   haConnected: boolean;
   snakes: SnakeValue[];
