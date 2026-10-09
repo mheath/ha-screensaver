@@ -1,0 +1,14 @@
+.snakes-scene { display: flex; flex-direction: column; background: #000000; }
+.snakes-scene .field { position: relative; flex: 1 1 0; min-height: 0; }
+.snakes-scene canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.snakes-scene .legend {
+  font-family: 'VT323', ui-monospace, monospace;
+  font-size: 3.2vmin;
+  line-height: 1.2;
+  color: #AAAAAA;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2em 1.6em;
+  padding: 0.3em 0.8em 0.5em;
+}
+.snakes-scene .swatch { margin-right: 0.4em; }
