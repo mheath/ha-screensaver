@@ -81,12 +81,18 @@ final class HaSession {
 			.put("type", "subscribe_events")
 			.put("event_type", "state_changed");
 		this.subscriptionId = this.ids.get() + 1;
-		request(subscribe);
+		request(subscribe).whenComplete(this::reportSetupFailure);
 		request(this.mapper.createObjectNode().put("type", "get_states")).thenAccept((result) -> {
 			List<EntityState> states = new ArrayList<>();
 			result.forEach((node) -> states.add(EntityState.fromJson(node)));
 			this.listener.onStates(states);
-		});
+		}).whenComplete(this::reportSetupFailure);
+	}
+
+	private void reportSetupFailure(Object ignored, Throwable failure) {
+		if (failure != null) {
+			this.listener.onSetupFailed(failure);
+		}
 	}
 
 	private void complete(JsonNode message) {
@@ -131,6 +137,13 @@ final class HaSession {
 		 * @param newState the new state, or {@code null} if the entity was removed
 		 */
 		void onStateChanged(String entityId, EntityState newState);
+
+		/**
+		 * Called when subscribing or loading states fails, so the connection can be
+		 * retried instead of staying half set up.
+		 * @param failure what went wrong
+		 */
+		void onSetupFailed(Throwable failure);
 
 	}
 

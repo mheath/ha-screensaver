@@ -273,6 +273,15 @@ public class HomeAssistantConnector implements SmartLifecycle {
 		}
 
 		@Override
+		public void onSetupFailed(Throwable failure) {
+			if (this.closed.get()) {
+				return;
+			}
+			logger.warn("Home Assistant connection setup failed", failure);
+			abort("setup failed");
+		}
+
+		@Override
 		public void onStates(List<EntityState> states) {
 			HomeAssistantConnector.this.state.markConnected(states);
 			publish();

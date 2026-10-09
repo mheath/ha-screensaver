@@ -88,6 +88,32 @@ class HaSessionTests {
 	}
 
 	@Test
+	void reportsFailedSubscription() {
+		this.session.onMessage("{\"type\":\"auth_ok\"}");
+		this.session.onMessage("""
+				{"id":1,"type":"result","success":false,"error":{"code":"unauthorized","message":"Unauthorized"}}""");
+		assertThat(this.listener.setupFailures).hasSize(1);
+	}
+
+	@Test
+	void reportsFailedStateLoad() {
+		this.session.onMessage("{\"type\":\"auth_ok\"}");
+		this.session.onMessage("""
+				{"id":2,"type":"result","success":false,"error":{"code":"home_assistant_error","message":"Boom"}}""");
+		assertThat(this.listener.setupFailures).hasSize(1);
+		assertThat(this.listener.states).isEmpty();
+	}
+
+	@Test
+	void reportsStatesThatCannotBeParsed() {
+		this.session.onMessage("{\"type\":\"auth_ok\"}");
+		this.session.onMessage("""
+				{"id":2,"type":"result","success":true,"result":[
+				  {"entity_id":"sensor.power","state":"1","attributes":{},"last_changed":"not a date"}]}""");
+		assertThat(this.listener.setupFailures).hasSize(1);
+	}
+
+	@Test
 	void reportsInvalidAuth() {
 		this.session.onMessage("{\"type\":\"auth_invalid\",\"message\":\"Invalid access token\"}");
 		assertThat(this.listener.authFailure).isEqualTo("Invalid access token");
@@ -124,6 +150,13 @@ class HaSessionTests {
 		final List<String> changedIds = new ArrayList<>();
 
 		final List<EntityState> changedStates = new ArrayList<>();
+
+		final List<Throwable> setupFailures = new ArrayList<>();
+
+		@Override
+		public void onSetupFailed(Throwable failure) {
+			this.setupFailures.add(failure);
+		}
 
 		@Override
 		public void onAuthenticated() {
