@@ -92,10 +92,10 @@ describe('pickGuests', () => {
 
 describe('shade', () => {
   it('fades from head to tail', () => {
-    expect(shade(0, 20)).toBe(1);
-    expect(shade(6, 20)).toBe(0.7);
-    expect(shade(11, 20)).toBe(0.45);
-    expect(shade(19, 20)).toBe(0.22);
+    expect(shade(0, 20)).toBe('█');
+    expect(shade(6, 20)).toBe('▓');
+    expect(shade(11, 20)).toBe('▒');
+    expect(shade(19, 20)).toBe('░');
   });
 });
 

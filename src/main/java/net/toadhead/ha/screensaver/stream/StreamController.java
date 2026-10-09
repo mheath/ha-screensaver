@@ -34,7 +34,7 @@ public class StreamController {
 		EmitterClient client = new EmitterClient(emitter);
 		emitter.onCompletion(() -> this.broadcaster.unregister(client));
 		emitter.onTimeout(() -> this.broadcaster.unregister(client));
-		emitter.onError((ex) -> this.broadcaster.unregister(client));
+		emitter.onError(_ -> this.broadcaster.unregister(client));
 		this.broadcaster.register(client, this.kioskConfigs.resolve(kiosk));
 		return emitter;
 	}

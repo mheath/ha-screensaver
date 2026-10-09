@@ -76,13 +76,15 @@ export function pickGuests(guests: SnakeDef[], count: number, random: () => numb
   return shuffled.slice(0, count);
 }
 
-/** Opacity for body segment `index`: full block at the head, fading like ▓ ▒ ░ to the tail. */
-export function shade(index: number, length: number): number {
+export type ShadeGlyph = '█' | '▓' | '▒' | '░';
+
+/** Glyph for body segment `index`: full block at the head, fading through ▓ ▒ ░ to the tail. */
+export function shade(index: number, length: number): ShadeGlyph {
   const f = index / Math.max(1, length);
-  if (f < 0.25) return 1;
-  if (f < 0.5) return 0.7;
-  if (f < 0.75) return 0.45;
-  return 0.22;
+  if (f < 0.25) return '█';
+  if (f < 0.5) return '▓';
+  if (f < 0.75) return '▒';
+  return '░';
 }
 
 /** A snake's cells (head first) on a character grid. */

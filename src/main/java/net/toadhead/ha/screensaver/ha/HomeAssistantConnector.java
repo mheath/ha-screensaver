@@ -113,7 +113,7 @@ public class HomeAssistantConnector implements SmartLifecycle {
 		Duration delay = this.nextBackoff;
 		Duration doubled = this.nextBackoff.multipliedBy(2);
 		this.nextBackoff = (doubled.compareTo(this.config.maxBackoff()) > 0) ? this.config.maxBackoff() : doubled;
-		logger.info("Reconnecting to Home Assistant in {}", delay);
+		logger.info("Reconnecting to Home Assistant in {}s", delay.toSeconds());
 		try {
 			this.reconnects.schedule(this::connect, delay.toMillis(), TimeUnit.MILLISECONDS);
 		}
