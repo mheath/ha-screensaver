@@ -1,0 +1,9 @@
+html, body { margin: 0; height: 100%; background: #000000; overflow: hidden; cursor: none; }
+#stage { position: fixed; inset: 0; }
+.layer { position: absolute; inset: 0; overflow: hidden; opacity: 0; transition: opacity 1s ease; }
+.layer.visible { opacity: 1; }
+#status {
+  position: fixed; right: 1.5vmin; bottom: 1.5vmin; z-index: 10;
+  width: 1vmin; height: 1vmin; border-radius: 50%;
+  background: #AA5500; opacity: 0.6;
+}
