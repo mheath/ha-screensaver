@@ -1,0 +1,6 @@
+screensaver:
+  home-assistant:
+    url: ws://localhost:1/api/websocket
+    token: test-token
+    # Tests never talk to a real Home Assistant.
+    enabled: false

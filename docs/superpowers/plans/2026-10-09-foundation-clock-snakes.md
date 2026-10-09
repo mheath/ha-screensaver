@@ -594,7 +594,7 @@ class ScreensaverPropertiesTests {
 
 	@Test
 	void rejectsBlankToken() {
-		assertFails("home-assistant.token", "screensaver.home-assistant.token=");
+		assertFails("homeAssistant.token", "screensaver.home-assistant.token=");
 	}
 
 	@Test
