@@ -84,6 +84,15 @@ class StreamBroadcasterTests {
 		assertThat(client.events).containsExactly("config", "state");
 	}
 
+	@Test
+	void completeAllEndsEveryStreamAndForgetsIt() throws IOException {
+		RecordingClient client = new RecordingClient();
+		this.broadcaster.register(client, this.config);
+		this.broadcaster.completeAll();
+		assertThat(client.completed).isTrue();
+		assertThat(this.broadcaster.clientCount()).isZero();
+	}
+
 	private void change(String value) {
 		this.ha.markConnected(List.of(WorldStateAssemblerTests.entity("sensor.power", value, "{}")));
 		this.worldState.onHomeAssistantUpdated(new HomeAssistantUpdated());
@@ -96,6 +105,8 @@ class StreamBroadcasterTests {
 		final List<Object> data = new ArrayList<>();
 
 		int heartbeats;
+
+		boolean completed;
 
 		boolean fail;
 
@@ -114,6 +125,11 @@ class StreamBroadcasterTests {
 				throw new IOException("broken pipe");
 			}
 			this.heartbeats++;
+		}
+
+		@Override
+		public void complete() {
+			this.completed = true;
 		}
 
 	}

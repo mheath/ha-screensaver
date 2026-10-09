@@ -6,6 +6,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import net.toadhead.ha.screensaver.kiosk.KioskConfig;
 
+import org.springframework.context.event.ContextClosedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -34,6 +36,24 @@ public class StreamBroadcaster {
 
 	public void unregister(Client client) {
 		this.clients.remove(client);
+	}
+
+	/**
+	 * Ends every open stream when the application starts shutting down. Streams
+	 * never time out, so graceful shutdown would otherwise wait for them until it
+	 * gives up.
+	 */
+	@EventListener(ContextClosedEvent.class)
+	public void completeAll() {
+		this.clients.keySet().forEach((client) -> {
+			try {
+				client.complete();
+			}
+			catch (RuntimeException ex) {
+				// Already gone.
+			}
+		});
+		this.clients.clear();
 	}
 
 	public int clientCount() {
@@ -76,6 +96,8 @@ public class StreamBroadcaster {
 		void send(String event, Object data) throws IOException;
 
 		void heartbeat() throws IOException;
+
+		void complete();
 
 	}
 

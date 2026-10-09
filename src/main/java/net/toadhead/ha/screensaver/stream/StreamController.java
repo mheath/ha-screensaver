@@ -51,6 +51,11 @@ public class StreamController {
 			this.emitter.send(SseEmitter.event().comment("ping"));
 		}
 
+		@Override
+		public void complete() {
+			this.emitter.complete();
+		}
+
 	}
 
 }
