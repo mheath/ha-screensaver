@@ -1,0 +1,16 @@
+.clock-scene { background: #000000; }
+.clock-face { position: absolute; left: 0; top: 0; transition: transform 2s ease; }
+
+.clock-digital { font-family: 'VT323', ui-monospace, monospace; color: #AAAAAA; text-align: center; padding: 0.2em 0.5em; }
+.clock-digital .time { font-size: 22vmin; line-height: 1; color: #FFFFFF; }
+.clock-digital .suffix { font-size: 0.3em; margin-left: 0.25em; color: #55FFFF; }
+.clock-digital .date { font-size: 6vmin; }
+
+.clock-analog svg { width: 55vmin; height: 55vmin; display: block; }
+.clock-analog .ring { fill: none; stroke: #555555; stroke-width: 2; }
+.clock-analog .tick { stroke: #AAAAAA; stroke-width: 3; stroke-linecap: round; }
+.clock-analog .hand { stroke-linecap: round; }
+.clock-analog .hour { stroke: #FFFFFF; stroke-width: 7; }
+.clock-analog .minute { stroke: #FFFFFF; stroke-width: 4; }
+.clock-analog .second { stroke: #FF5555; stroke-width: 2; }
+.clock-analog .hub { fill: #FF5555; }
