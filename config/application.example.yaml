@@ -1,0 +1,48 @@
+# Copy to config/application.yaml (git-ignored is up to you) and mount it into the
+# container, or put these properties in Spring Cloud Config.
+screensaver:
+  home-assistant:
+    url: ws://homeassistant.lan:8123/api/websocket
+    token: ${HA_TOKEN}
+
+  clock:
+    use-24-hour: false
+
+  snakes:
+    guest-count: 2
+    pinned:
+      internet-download:
+        entity: sensor.wan_download_mbps
+        label: Internet download bandwidth
+        min: 0
+        max: 1000
+        color: light-green
+      house-power:
+        entity: sensor.house_power_w
+        label: House power consumption
+        min: 0
+        max: 12000
+        color: light-red
+        precision: 0
+    guests:
+      outdoor-wind:
+        entity: sensor.wind_speed
+        label: Wind speed
+        min: 0
+        max: 40
+      people-home:
+        entity: zone.home
+        label: People home
+        min: 0
+        max: 6
+        precision: 0
+
+  rotation:
+    scenes:
+      clock: { weight: 2, duration: 20s }
+      snakes: { weight: 2, duration: 45s }
+
+  kiosks:
+    bedroom:
+      scenes:
+        snakes: { enabled: false }

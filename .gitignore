@@ -35,3 +35,6 @@ build/
 ### Frontend ###
 .node/
 src/main/frontend/node_modules/
+
+### Local config ###
+config/application.yaml
