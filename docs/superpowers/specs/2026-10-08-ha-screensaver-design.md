@@ -103,7 +103,7 @@ The **world state** is the derived data the scenes need, never a dump of all HA 
 {
   "haConnected": true,
   "generatedAt": "2026-10-08T17:05:00-06:00",
-  "snakes": [ { "id": "internet-download", "value": 412.5, "available": true } ],
+  "snakes": [ { "id": "internet-download", "value": 243.1, "unit": "Mbit/s", "available": true } ],
   "weather": { "condition": "partlycloudy", "temperature": 64, "unit": "°F", "forecast": [ ... ] },
   "calendar": { "date": "2026-10-08", "events": [ { "title": "...", "start": "...", "end": "...", "allDay": false, "calendar": "family" } ] },
   "alerts": [ { "id": "garage-open", "title": "...", "icon": "mdi:garage-open", "message": "..." } ],
@@ -182,14 +182,16 @@ interface Scene {
 - For each snake, value → `t = clamp((value − min) / (max − min), 0, 1)`; length and speed are linear interpolations from configured min/max length and speed by `t`. Values update live while the scene is on screen.
 - Movement: wanders the grid at its speed, never reversing, turning at walls, occasionally changing direction at random.
 - **Palette:** the 16-color text-mode palette. Black (0) is the background, which leaves 15 snake colors. Configured colors are honored for pinned snakes. Guest snakes without a color, or whose color is already on screen, get an unused color, preferring the 13 brighter colors before dark blue and dark gray. No two snakes on screen share a color.
-- **Legend:** a reserved bottom row listing each on-screen snake as its colored `█▓▒░` swatch followed by its label.
-- **Unavailable entity:** the snake freezes in place, renders in dark gray, and its legend entry is marked unavailable.
+- **Legend:** a reserved bottom row listing each on-screen snake as its colored `█▓▒░` swatch, its label, and its current value with unit, e.g. `█▓▒░ Internet download bandwidth (243.1 Mbit/s)`. Values update live.
+  - The unit comes from the entity's `unit_of_measurement` attribute, sent in the world state, and can be overridden per snake with `unit`. A unitless value shows just the number: `People home (3)`.
+  - Numbers show at most `precision` decimals (default 1) with trailing zeros dropped, so `8.0` displays as `8`.
+- **Unavailable entity:** the snake freezes in place, renders in dark gray, and its legend shows `(unavailable)` in place of the value.
 - Eligible when at least one snake is configured.
 
 **Clock**
 - Each appearance picks digital or analog at random (styles are an extensible list), with a 12/24-hour option.
 - Uses the tablet's local time and needs no backend data.
-- To avoid OLED burn-in, the face drifts a few pixels every minute.
+- To avoid OLED burn-in, each appearance places the face at a random position on screen (fully on screen), and it then drifts a few pixels every minute.
 - Always eligible.
 
 **Weather**
@@ -291,6 +293,7 @@ screensaver:
         label: People home
         min: 0
         max: 6
+        precision: 0              # legend shows "People home (3)"
 
   batteries:
     threshold: 20
@@ -337,7 +340,7 @@ screensaver:
 ### 6.2 Notes and validation
 
 - **Colors** are the 16 text-mode palette names: `black, blue, green, cyan, red, magenta, brown, light-gray, dark-gray, light-blue, light-green, light-cyan, light-red, light-magenta, yellow, white`. `black` is rejected for snakes.
-- **Snakes:** each needs `min < max`; pinned snakes must have distinct colors; pinned count + `guest-count` ≤ 15; `guest-count` ≤ guest pool size.
+- **Snakes:** each needs `min < max`; pinned snakes must have distinct colors; pinned count + `guest-count` ≤ 15; `guest-count` ≤ guest pool size. Optional `unit` overrides the entity's unit in the legend; optional `precision` (0–4, default 1) sets the maximum decimals.
 - **Alerts:** each needs `title`, `icon`, and at least one condition. An alert may set its own `weight` to override `rotation.scenes.alert.weight`.
 - **Kiosks:** the `kiosks.<id>` keys are the values used in `?kiosk=`. `disabled-alerts` entries must name existing alerts. Scene overrides may set `enabled`, `weight`, and `duration`.
 - **Scene types** are a fixed enum; unknown keys under `rotation.scenes` or `kiosks.*.scenes` fail validation.
@@ -358,7 +361,7 @@ Defaults (`rotation.scenes`) merged with `kiosks.<id>.scenes` overrides, plus th
 
 **Frontend (Vitest)**
 - Scheduler with a seeded random generator: weights respected, no immediate repeats, alert expansion, `max-alert-share` cap, fault sidelining, kiosk overrides.
-- Pure functions: snake value → length/speed, palette color assignment, calendar grouping/dimming, photo deck shuffling.
+- Pure functions: snake value → length/speed, legend value formatting (precision, trailing zeros, missing unit, unavailable), palette color assignment, calendar grouping/dimming, photo deck shuffling.
 
 **Visual development (manual)**
 - `?scene=<type>` forces a single scene. `?demo` feeds canned world state and config, so scenes can be built in a desktop browser with no backend, HA, or NAS.
