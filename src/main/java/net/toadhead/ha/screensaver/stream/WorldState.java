@@ -2,14 +2,27 @@ package net.toadhead.ha.screensaver.stream;
 
 import java.util.List;
 
+import net.toadhead.ha.screensaver.calendar.CalendarEvent;
+
 /**
  * The derived data the scenes need, streamed to every kiosk as the {@code state}
  * event.
  *
  * @param haConnected whether Home Assistant is currently connected
  * @param snakes current value of every configured snake, pinned first
+ * @param calendar today's and tomorrow's calendar events
  */
-public record WorldState(boolean haConnected, List<SnakeValue> snakes) {
+public record WorldState(boolean haConnected, List<SnakeValue> snakes, Calendar calendar) {
+
+	/**
+	 * Events from every configured calendar, from the start of today to the end of
+	 * tomorrow in Home Assistant's time zone.
+	 *
+	 * @param events merged events
+	 */
+	public record Calendar(List<CalendarEvent> events) {
+
+	}
 
 	/**
 	 * A snake's current value.

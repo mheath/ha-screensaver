@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import net.toadhead.ha.screensaver.calendar.CalendarEvent;
 import net.toadhead.ha.screensaver.config.ScreensaverProperties;
 import net.toadhead.ha.screensaver.config.ScreensaverProperties.Snake;
 import net.toadhead.ha.screensaver.ha.EntityState;
@@ -19,12 +20,13 @@ final class WorldStateAssembler {
 	private WorldStateAssembler() {
 	}
 
-	static WorldState assemble(ScreensaverProperties properties, HomeAssistantState ha) {
+	static WorldState assemble(ScreensaverProperties properties, HomeAssistantState ha,
+			List<CalendarEvent> calendarEvents) {
 		List<SnakeValue> snakes = Stream
 			.concat(properties.snakes().pinned().entrySet().stream(), properties.snakes().guests().entrySet().stream())
 			.map((entry) -> snakeValue(entry, ha))
 			.toList();
-		return new WorldState(ha.connected(), snakes);
+		return new WorldState(ha.connected(), snakes, new WorldState.Calendar(calendarEvents));
 	}
 
 	private static SnakeValue snakeValue(Map.Entry<String, Snake> entry, HomeAssistantState ha) {

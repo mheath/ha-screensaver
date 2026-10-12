@@ -1,11 +1,15 @@
 package net.toadhead.ha.screensaver.kiosk;
 
 import java.time.Duration;
+import java.time.LocalTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import net.toadhead.ha.screensaver.config.CalendarColor;
 import net.toadhead.ha.screensaver.config.SceneType;
 import net.toadhead.ha.screensaver.config.ScreensaverProperties;
+import net.toadhead.ha.screensaver.config.ScreensaverProperties.Calendar;
+import net.toadhead.ha.screensaver.config.ScreensaverProperties.CalendarEntry;
 import net.toadhead.ha.screensaver.config.ScreensaverProperties.Clock;
 import net.toadhead.ha.screensaver.config.ScreensaverProperties.Kiosk;
 import net.toadhead.ha.screensaver.config.ScreensaverProperties.Rotation;
@@ -16,6 +20,8 @@ import net.toadhead.ha.screensaver.config.TestProperties;
 import net.toadhead.ha.screensaver.config.TextModeColor;
 import net.toadhead.ha.screensaver.kiosk.KioskConfig.SceneConfig;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -94,6 +100,26 @@ class KioskConfigServiceTests {
 						null, 1, 0, 1000),
 				new KioskConfig.SnakeDef("house-power", "House power", null, "kW", 0, 0, 12));
 		assertThat(config.snakes().guests()).extracting(KioskConfig.SnakeDef::id).containsExactly("wind");
+	}
+
+	@Test
+	void includesCalendarsWithResolvedColorsInConfigOrder() {
+		Map<String, CalendarEntry> calendars = new LinkedHashMap<>();
+		calendars.put("family", new CalendarEntry("calendar.family", "Family", null));
+		calendars.put("school", new CalendarEntry("calendar.school", "School", CalendarColor.YELLOW));
+		var properties = new ScreensaverProperties(TestProperties.homeAssistant(), new Clock(false),
+				new Snakes(0, 4, 30, 2, 20, Map.of(), Map.of()), new Calendar(LocalTime.of(17, 5), calendars),
+				new Rotation(Map.of()), Map.of());
+
+		KioskConfig config = new KioskConfigService(properties).resolve("kitchen");
+
+		assertThat(config.calendar().allDayUntil()).isEqualTo("17:05");
+		assertThat(config.calendar().calendars()).containsExactly(
+				new KioskConfig.CalendarDef("family", "Family", "#3b82f6", "#ffffff"),
+				new KioskConfig.CalendarDef("school", "School", "#facc15", "#1f1a05"));
+		JsonNode json = JsonMapper.shared().readTree(JsonMapper.shared().writeValueAsString(config));
+		assertThat(json.path("calendar").path("allDayUntil").asString("")).isEqualTo("17:05");
+		assertThat(json.path("calendar").path("calendars").get(1).path("textColor").asString("")).isEqualTo("#1f1a05");
 	}
 
 	private static KioskConfigService service(Map<SceneType, SceneSettings> rotation, Map<String, Kiosk> kiosks) {

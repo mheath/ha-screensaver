@@ -13,8 +13,10 @@ import net.toadhead.ha.screensaver.config.TextModeColor;
  * @param scenes enabled scenes with their resolved weight and duration
  * @param clock clock scene options
  * @param snakes snakes scene options
+ * @param calendar calendar scene options
  */
-public record KioskConfig(String kiosk, List<SceneConfig> scenes, ClockOptions clock, SnakeOptions snakes) {
+public record KioskConfig(String kiosk, List<SceneConfig> scenes, ClockOptions clock, SnakeOptions snakes,
+		CalendarOptions calendar) {
 
 	public record SceneConfig(SceneType type, double weight, long durationMs) {
 
@@ -31,6 +33,25 @@ public record KioskConfig(String kiosk, List<SceneConfig> scenes, ClockOptions c
 
 	public record SnakeDef(String id, String label, TextModeColor color, String unit, int precision, double min,
 			double max) {
+
+	}
+
+	/**
+	 * @param allDayUntil {@code HH:mm} local time after which an all-day event alone no
+	 * longer keeps today on screen
+	 * @param calendars every configured calendar, in configuration order
+	 */
+	public record CalendarOptions(String allDayUntil, List<CalendarDef> calendars) {
+
+	}
+
+	/**
+	 * @param id calendar id, matching {@code calendar} on events
+	 * @param label calendar label
+	 * @param color event block color, as CSS
+	 * @param textColor text color on the block, as CSS
+	 */
+	public record CalendarDef(String id, String label, String color, String textColor) {
 
 	}
 

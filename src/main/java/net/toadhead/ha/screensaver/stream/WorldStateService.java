@@ -1,5 +1,7 @@
 package net.toadhead.ha.screensaver.stream;
 
+import net.toadhead.ha.screensaver.calendar.CalendarEvents;
+import net.toadhead.ha.screensaver.calendar.CalendarUpdated;
 import net.toadhead.ha.screensaver.config.ScreensaverProperties;
 import net.toadhead.ha.screensaver.ha.HomeAssistantState;
 import net.toadhead.ha.screensaver.ha.HomeAssistantUpdated;
@@ -18,12 +20,15 @@ public class WorldStateService {
 
 	private final HomeAssistantState ha;
 
+	private final CalendarEvents calendar;
+
 	private volatile Versioned current;
 
-	public WorldStateService(ScreensaverProperties properties, HomeAssistantState ha) {
+	public WorldStateService(ScreensaverProperties properties, HomeAssistantState ha, CalendarEvents calendar) {
 		this.properties = properties;
 		this.ha = ha;
-		this.current = new Versioned(0, WorldStateAssembler.assemble(properties, ha));
+		this.calendar = calendar;
+		this.current = new Versioned(0, WorldStateAssembler.assemble(properties, ha, calendar.events()));
 	}
 
 	public Versioned current() {
@@ -35,8 +40,13 @@ public class WorldStateService {
 		refresh();
 	}
 
+	@EventListener
+	public void onCalendarUpdated(CalendarUpdated event) {
+		refresh();
+	}
+
 	synchronized void refresh() {
-		WorldState next = WorldStateAssembler.assemble(this.properties, this.ha);
+		WorldState next = WorldStateAssembler.assemble(this.properties, this.ha, this.calendar.events());
 		if (!next.equals(this.current.state())) {
 			this.current = new Versioned(this.current.version() + 1, next);
 		}

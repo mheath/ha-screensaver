@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import net.toadhead.ha.screensaver.calendar.CalendarEvents;
 import net.toadhead.ha.screensaver.config.TestProperties;
 import net.toadhead.ha.screensaver.ha.HomeAssistantState;
 import net.toadhead.ha.screensaver.ha.HomeAssistantUpdated;
@@ -19,12 +20,13 @@ class StreamBroadcasterTests {
 
 	private final WorldStateService worldState = new WorldStateService(
 			TestProperties.withSnakes(Map.of("power", TestProperties.snake("sensor.power", "Power")), Map.of()),
-			this.ha);
+			this.ha, new CalendarEvents());
 
 	private final StreamBroadcaster broadcaster = new StreamBroadcaster(this.worldState);
 
 	private final KioskConfig config = new KioskConfig("kitchen", List.of(), new KioskConfig.ClockOptions(false),
-			new KioskConfig.SnakeOptions(0, 4, 30, 2, 20, List.of(), List.of()));
+			new KioskConfig.SnakeOptions(0, 4, 30, 2, 20, List.of(), List.of()),
+			new KioskConfig.CalendarOptions("18:00", List.of()));
 
 	@Test
 	void registerSendsConfigThenState() throws IOException {

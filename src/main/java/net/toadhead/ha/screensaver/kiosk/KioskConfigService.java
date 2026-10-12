@@ -1,16 +1,20 @@
 package net.toadhead.ha.screensaver.kiosk;
 
 import java.time.Duration;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import net.toadhead.ha.screensaver.config.CalendarColor;
 import net.toadhead.ha.screensaver.config.SceneType;
 import net.toadhead.ha.screensaver.config.ScreensaverProperties;
 import net.toadhead.ha.screensaver.config.ScreensaverProperties.Kiosk;
 import net.toadhead.ha.screensaver.config.ScreensaverProperties.SceneSettings;
 import net.toadhead.ha.screensaver.config.ScreensaverProperties.Snake;
+import net.toadhead.ha.screensaver.kiosk.KioskConfig.CalendarDef;
+import net.toadhead.ha.screensaver.kiosk.KioskConfig.CalendarOptions;
 import net.toadhead.ha.screensaver.kiosk.KioskConfig.ClockOptions;
 import net.toadhead.ha.screensaver.kiosk.KioskConfig.SceneConfig;
 import net.toadhead.ha.screensaver.kiosk.KioskConfig.SnakeDef;
@@ -28,8 +32,11 @@ public class KioskConfigService {
 
 	private final ScreensaverProperties properties;
 
+	private final CalendarOptions calendarOptions;
+
 	public KioskConfigService(ScreensaverProperties properties) {
 		this.properties = properties;
+		this.calendarOptions = calendarOptions(properties.calendar());
 	}
 
 	public KioskConfig resolve(String kioskId) {
@@ -37,7 +44,7 @@ public class KioskConfigService {
 		Kiosk kiosk = this.properties.kiosks().get(id);
 		Map<SceneType, SceneSettings> overrides = (kiosk != null) ? kiosk.scenes() : Map.of();
 		return new KioskConfig(id, scenes(overrides), new ClockOptions(this.properties.clock().use24Hour()),
-				snakeOptions());
+				snakeOptions(), this.calendarOptions);
 	}
 
 	private List<SceneConfig> scenes(Map<SceneType, SceneSettings> overrides) {
@@ -59,6 +66,16 @@ public class KioskConfigService {
 		var snakes = this.properties.snakes();
 		return new SnakeOptions(snakes.guestCount(), snakes.minLength(), snakes.maxLength(), snakes.minSpeed(),
 				snakes.maxSpeed(), defs(snakes.pinned()), defs(snakes.guests()));
+	}
+
+	private static CalendarOptions calendarOptions(ScreensaverProperties.Calendar calendar) {
+		List<CalendarDef> calendars = CalendarColor.assign(calendar.calendars())
+			.entrySet()
+			.stream()
+			.map((entry) -> new CalendarDef(entry.getKey(), calendar.calendars().get(entry.getKey()).label(),
+					entry.getValue().background(), entry.getValue().text()))
+			.toList();
+		return new CalendarOptions(calendar.allDayUntil().format(DateTimeFormatter.ofPattern("HH:mm")), calendars);
 	}
 
 	private static List<SnakeDef> defs(Map<String, Snake> snakes) {
