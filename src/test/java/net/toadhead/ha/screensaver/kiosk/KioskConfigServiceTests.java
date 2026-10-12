@@ -26,7 +26,7 @@ class KioskConfigServiceTests {
 		KioskConfig config = service(Map.of(), Map.of()).resolve("kitchen");
 		assertThat(config.kiosk()).isEqualTo("kitchen");
 		assertThat(config.scenes()).containsExactly(new SceneConfig(SceneType.CLOCK, 2, 20_000),
-				new SceneConfig(SceneType.SNAKES, 2, 45_000));
+				new SceneConfig(SceneType.SNAKES, 2, 45_000), new SceneConfig(SceneType.CALENDAR, 2, 20_000));
 	}
 
 	@Test
@@ -54,7 +54,7 @@ class KioskConfigServiceTests {
 	void kioskCanDisableAScene() {
 		var kiosks = Map.of("bedroom", new Kiosk(Map.of(SceneType.SNAKES, new SceneSettings(false, null, null))));
 		KioskConfig config = service(Map.of(), kiosks).resolve("bedroom");
-		assertThat(config.scenes()).extracting(SceneConfig::type).containsExactly(SceneType.CLOCK);
+		assertThat(config.scenes()).extracting(SceneConfig::type).containsExactly(SceneType.CLOCK, SceneType.CALENDAR);
 	}
 
 	@Test
@@ -62,14 +62,14 @@ class KioskConfigServiceTests {
 		var rotation = Map.of(SceneType.SNAKES, new SceneSettings(false, null, null));
 		var kiosks = Map.of("hall", new Kiosk(Map.of(SceneType.SNAKES, new SceneSettings(null, 9.0, null))));
 		KioskConfig config = service(rotation, kiosks).resolve("hall");
-		assertThat(config.scenes()).extracting(SceneConfig::type).containsExactly(SceneType.CLOCK);
+		assertThat(config.scenes()).extracting(SceneConfig::type).containsExactly(SceneType.CLOCK, SceneType.CALENDAR);
 	}
 
 	@Test
 	void unknownKioskGetsTheDefaults() {
 		var kiosks = Map.of("bedroom", new Kiosk(Map.of(SceneType.SNAKES, new SceneSettings(false, null, null))));
 		KioskConfig config = service(Map.of(), kiosks).resolve("somewhere-else");
-		assertThat(config.scenes()).hasSize(2);
+		assertThat(config.scenes()).hasSize(3);
 	}
 
 	@Test
@@ -80,7 +80,8 @@ class KioskConfigServiceTests {
 		pinned.put("house-power", new Snake("sensor.power", "House power", 0.0, 12.0, null, "kW", 0));
 		Map<String, Snake> guests = Map.of("wind", TestProperties.snake("sensor.wind", "Wind speed"));
 		var properties = new ScreensaverProperties(TestProperties.homeAssistant(), new Clock(true),
-				new Snakes(1, 3, 25, 1, 15, pinned, guests), new Rotation(Map.of()), Map.of());
+				new Snakes(1, 3, 25, 1, 15, pinned, guests), TestProperties.noCalendars(), new Rotation(Map.of()),
+				Map.of());
 
 		KioskConfig config = new KioskConfigService(properties).resolve("kitchen");
 
@@ -97,7 +98,8 @@ class KioskConfigServiceTests {
 
 	private static KioskConfigService service(Map<SceneType, SceneSettings> rotation, Map<String, Kiosk> kiosks) {
 		var properties = new ScreensaverProperties(TestProperties.homeAssistant(), new Clock(false),
-				new Snakes(0, 4, 30, 2, 20, Map.of(), Map.of()), new Rotation(rotation), kiosks);
+				new Snakes(0, 4, 30, 2, 20, Map.of(), Map.of()), TestProperties.noCalendars(), new Rotation(rotation),
+				kiosks);
 		return new KioskConfigService(properties);
 	}
 

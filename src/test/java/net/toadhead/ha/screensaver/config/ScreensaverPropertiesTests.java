@@ -1,6 +1,7 @@
 package net.toadhead.ha.screensaver.config;
 
 import java.time.Duration;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -128,6 +129,70 @@ class ScreensaverPropertiesTests {
 	@Test
 	void rejectsNonPositiveDuration() {
 		assertFails("duration must be positive", "screensaver.kiosks.hall.scenes.clock.duration=0s");
+	}
+
+	@Test
+	void bindsCalendarDefaults() {
+		this.runner.run((context) -> {
+			ScreensaverProperties properties = context.getBean(ScreensaverProperties.class);
+			assertThat(properties.calendar().allDayUntil()).isEqualTo(LocalTime.of(18, 0));
+			assertThat(properties.calendar().calendars()).isEmpty();
+		});
+	}
+
+	@Test
+	void bindsCalendarsInConfigurationOrder() {
+		List<String> props = new ArrayList<>(calendar("family", "color=lavender"));
+		props.addAll(calendar("school"));
+		props.add("screensaver.calendar.all-day-until=17:30");
+		props.add("screensaver.rotation.scenes.calendar.weight=4");
+		this.runner.withPropertyValues(props.toArray(String[]::new)).run((context) -> {
+			ScreensaverProperties properties = context.getBean(ScreensaverProperties.class);
+			assertThat(properties.calendar().allDayUntil()).isEqualTo(LocalTime.of(17, 30));
+			assertThat(properties.calendar().calendars()).containsOnlyKeys("family", "school");
+			assertThat(properties.calendar().calendars().keySet()).containsExactly("family", "school");
+			ScreensaverProperties.CalendarEntry family = properties.calendar().calendars().get("family");
+			assertThat(family.entity()).isEqualTo("calendar.family");
+			assertThat(family.label()).isEqualTo("Calendar family");
+			assertThat(family.color()).isEqualTo(CalendarColor.LAVENDER);
+			assertThat(properties.calendar().calendars().get("school").color()).isNull();
+			assertThat(properties.rotation().scenes().get(SceneType.CALENDAR).weight()).isEqualTo(4.0);
+		});
+	}
+
+	@Test
+	void rejectsDuplicateCalendarColors() {
+		List<String> props = new ArrayList<>(calendar("a", "color=teal"));
+		props.addAll(calendar("b", "color=teal"));
+		assertFails("calendars must have distinct colors", props);
+	}
+
+	@Test
+	void rejectsMoreCalendarsThanColors() {
+		List<String> props = new ArrayList<>();
+		for (int i = 0; i < 21; i++) {
+			props.addAll(calendar("c" + i));
+		}
+		assertFails("at most 20 calendars", props);
+	}
+
+	@Test
+	void rejectsUnknownCalendarColor() {
+		assertFails("CalendarColor", calendar("a", "color=indigo"));
+	}
+
+	@Test
+	void rejectsCalendarWithoutEntity() {
+		assertFails("must not be blank", calendar("a", "entity="));
+	}
+
+	private static List<String> calendar(String id, String... overrides) {
+		String prefix = "screensaver.calendar.calendars." + id + ".";
+		List<String> props = new ArrayList<>(List.of(prefix + "entity=calendar." + id, prefix + "label=Calendar " + id));
+		for (String override : overrides) {
+			props.add(prefix + override);
+		}
+		return props;
 	}
 
 	private void assertFails(String expected, List<String> properties) {

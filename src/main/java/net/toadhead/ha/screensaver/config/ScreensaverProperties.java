@@ -2,6 +2,7 @@ package net.toadhead.ha.screensaver.config;
 
 import java.net.URI;
 import java.time.Duration;
+import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +19,7 @@ import jakarta.validation.constraints.Positive;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.validation.annotation.Validated;
 
 /**
@@ -27,13 +29,15 @@ import org.springframework.validation.annotation.Validated;
  * @param homeAssistant connection to Home Assistant
  * @param clock clock scene options
  * @param snakes snakes scene options
+ * @param calendar calendar scene options
  * @param rotation default weight, duration and enablement for each scene type
  * @param kiosks per-kiosk overrides keyed by the {@code ?kiosk=} id
  */
 @ConfigurationProperties("screensaver")
 @Validated
 public record ScreensaverProperties(@Valid @NotNull HomeAssistant homeAssistant, @Valid @DefaultValue Clock clock,
-		@Valid @DefaultValue Snakes snakes, @Valid @DefaultValue Rotation rotation, Map<String, @Valid Kiosk> kiosks) {
+		@Valid @DefaultValue Snakes snakes, @Valid @DefaultValue Calendar calendar, @Valid @DefaultValue Rotation rotation,
+		Map<String, @Valid Kiosk> kiosks) {
 
 	/** Every palette color except black can be a snake. */
 	static final int MAX_SNAKES = 15;
@@ -133,6 +137,49 @@ public record ScreensaverProperties(@Valid @NotNull HomeAssistant homeAssistant,
 		public boolean isColorVisible() {
 			return this.color != TextModeColor.BLACK;
 		}
+
+	}
+
+	/**
+	 * Calendar scene options.
+	 *
+	 * @param allDayUntil local time after which an all-day event alone no longer keeps
+	 * today on screen
+	 * @param calendars calendars to show, keyed by id, in configuration order
+	 */
+	public record Calendar(@DefaultValue("18:00") @DateTimeFormat(pattern = "H:mm") LocalTime allDayUntil,
+			Map<String, @Valid CalendarEntry> calendars) {
+
+		public Calendar {
+			// Keep the bound map as-is: its order decides automatic colors.
+			calendars = (calendars != null) ? calendars : Map.of();
+		}
+
+		@AssertTrue(message = "calendars must have distinct colors")
+		public boolean isColorsDistinct() {
+			List<CalendarColor> colors = this.calendars.values()
+				.stream()
+				.map(CalendarEntry::color)
+				.filter(Objects::nonNull)
+				.toList();
+			return colors.size() == new HashSet<>(colors).size();
+		}
+
+		@AssertTrue(message = "there can be at most 20 calendars (one per color)")
+		public boolean isWithinPalette() {
+			return this.calendars.size() <= CalendarColor.values().length;
+		}
+
+	}
+
+	/**
+	 * One Home Assistant calendar.
+	 *
+	 * @param entity the calendar entity id, for example {@code calendar.family}
+	 * @param label name used in logs
+	 * @param color event color, or {@code null} to assign one automatically
+	 */
+	public record CalendarEntry(@NotBlank String entity, @NotBlank String label, CalendarColor color) {
 
 	}
 

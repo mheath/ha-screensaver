@@ -37,10 +37,23 @@ screensaver:
         max: 6
         precision: 0
 
+  calendar:
+    all-day-until: "18:00"        # an all-day event alone keeps "today" on screen until this time
+    calendars:
+      family:
+        entity: calendar.family
+        label: Family
+        color: blue               # blue, orange, green, pink, violet, yellow, teal, red, sky, lime,
+                                  # fuchsia, amber, lavender, emerald, rose, cyan, purple, brown, slate, stone
+      school:
+        entity: calendar.school
+        label: School             # no color: the first unused one is assigned
+
   rotation:
     scenes:
       clock: { weight: 2, duration: 20s }
       snakes: { weight: 2, duration: 45s }
+      calendar: { weight: 2, duration: 20s }
 
   kiosks:
     bedroom:

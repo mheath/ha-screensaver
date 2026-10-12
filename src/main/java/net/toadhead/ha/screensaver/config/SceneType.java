@@ -13,7 +13,9 @@ public enum SceneType {
 
 	CLOCK(2, Duration.ofSeconds(20)),
 
-	SNAKES(2, Duration.ofSeconds(45));
+	SNAKES(2, Duration.ofSeconds(45)),
+
+	CALENDAR(2, Duration.ofSeconds(20));
 
 	private final double defaultWeight;
 
