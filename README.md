@@ -13,6 +13,10 @@ Backend-only iteration: `./mvnw test -Dskip.npm -Dskip.installnodenpm`.
 
 ## Run
 
+With Docker Compose: copy `config/compose.example.yaml` to `compose.yaml` on the server, put your settings in `application.yaml` next to it and `HA_TOKEN=<token>` in `.env`, then `docker compose up -d`. It runs the published image, `ghcr.io/mheath/ha-screensaver:latest`.
+
+Or with plain Docker:
+
 ```bash
 docker run -d --name ha-screensaver -p 8080:8080 \
   -e HA_TOKEN=<long-lived access token> \

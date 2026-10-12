@@ -1,0 +1,19 @@
+# Copy to compose.yaml on the Docker server, next to:
+#   application.yaml  your screensaver.* settings (start from application.example.yaml)
+#   .env              HA_TOKEN=<long-lived access token>   (keep it out of git)
+# Then: docker compose up -d
+services:
+  ha-screensaver:
+    image: ghcr.io/mheath/ha-screensaver:latest
+    container_name: ha-screensaver
+    restart: unless-stopped
+    ports:
+      - "8080:8080"                 # HAProxy forwards here
+    environment:
+      HA_TOKEN: ${HA_TOKEN:?set HA_TOKEN in .env}
+      SPRING_CONFIG_ADDITIONAL_LOCATION: /config/
+      # Fallback for calendar day boundaries until Home Assistant reports its own time zone.
+      TZ: America/Denver
+    volumes:
+      - ./application.yaml:/config/application.yaml:ro
+    # No healthcheck: the image has no shell or curl. Monitor /actuator/health from outside.
