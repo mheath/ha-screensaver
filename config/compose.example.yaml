@@ -7,6 +7,8 @@ services:
     image: ghcr.io/mheath/ha-screensaver:latest
     container_name: ha-screensaver
     restart: unless-stopped
+    # Without a limit, the buildpack sizes the Java heap from all of the host's memory.
+    mem_limit: 768m
     ports:
       - "8080:8080"                 # HAProxy forwards here
     environment:
@@ -14,6 +16,10 @@ services:
       SPRING_CONFIG_ADDITIONAL_LOCATION: /config/
       # Fallback for calendar day boundaries until Home Assistant reports its own time zone.
       TZ: America/Denver
+      # Fewer threads leave more of mem_limit for the heap (the app uses about 20).
+      BPL_JVM_THREAD_COUNT: "50"
+      # Skip the native-memory report the JVM otherwise prints on every exit.
+      BPL_JAVA_NMT_ENABLED: "false"
     volumes:
       - ./application.yaml:/config/application.yaml:ro
     # No healthcheck: the image has no shell or curl. Monitor /actuator/health from outside.
