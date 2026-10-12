@@ -50,3 +50,14 @@ export interface WorldState {
   haConnected: boolean;
   snakes: SnakeValue[];
 }
+
+/** One calendar event (net.toadhead.ha.screensaver.calendar.CalendarEvent). */
+export interface CalendarEvent {
+  title: string;
+  /** `2026-10-09` for all-day events, otherwise an ISO date-time with offset. */
+  start: string;
+  /** Exclusive, like `start`. */
+  end: string;
+  allDay: boolean;
+  calendar: string;
+}
