@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEMO_CONFIG, demoState } from './demo';
+import { addDays, eventsOn } from './scenes/calendar/model';
 
 describe('demo data', () => {
   it('has a value for every configured snake', () => {
@@ -21,5 +22,28 @@ describe('demo data', () => {
 
   it('includes an unavailable snake to show the frozen look', () => {
     expect(demoState(0).snakes.some((s) => !s.available)).toBe(true);
+  });
+});
+
+describe('demo calendar', () => {
+  it('only uses configured calendars', () => {
+    const ids = DEMO_CONFIG.calendar.calendars.map((c) => c.id);
+    for (const event of demoState(Date.now()).calendar.events) {
+      expect(ids).toContain(event.calendar);
+    }
+  });
+
+  it('has events today and tomorrow, including an overlap and an all-day event', () => {
+    const noon = new Date(2026, 9, 9, 12, 0).getTime();
+    const events = demoState(noon).calendar.events;
+    const today = eventsOn(events, new Date(noon));
+    const tomorrow = eventsOn(events, addDays(new Date(noon), 1));
+    expect(today.allDay.length).toBeGreaterThan(0);
+    expect(today.timed.length).toBeGreaterThanOrEqual(4);
+    expect(tomorrow.timed.length).toBeGreaterThan(0);
+  });
+
+  it('lists the calendar scene', () => {
+    expect(DEMO_CONFIG.scenes.map((s) => s.type)).toContain('calendar');
   });
 });

@@ -1,0 +1,47 @@
+/* Modern look on purpose: the DOS text-mode style belongs to snakes and the clock. */
+.calendar-scene {
+  position: absolute; inset: 0; box-sizing: border-box;
+  display: flex; flex-direction: column;
+  padding: 5vmin 6vmin 4vmin;
+  color: #ffffff;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(160deg, #141a3a 0%, #2a1645 100%);
+}
+.calendar-scene.tomorrow { background: linear-gradient(160deg, #3a2410 0%, #5a1f3a 100%); }
+
+.calendar-scene .head { display: flex; align-items: baseline; gap: 2vmin; margin-bottom: 3vmin; }
+.calendar-scene .day-tag {
+  font-size: 2.6vmin; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 0.5vmin 1.6vmin; border-radius: 1vmin; background: rgba(255, 255, 255, 0.14);
+}
+.calendar-scene.tomorrow .day-tag { background: #ffb547; color: #2a1406; }
+.calendar-scene .date { font-size: 6vmin; font-weight: 700; }
+
+.calendar-scene .all-day { display: flex; flex-wrap: wrap; gap: 1.2vmin; margin: 0 0 3vmin 9vmin; }
+.calendar-scene .pill { font-size: 2.4vmin; font-weight: 600; padding: 0.7vmin 2vmin; border-radius: 999px; }
+.calendar-scene.all-day-only .all-day { flex: 1; align-content: flex-start; margin-left: 0; gap: 2.4vmin; }
+.calendar-scene.all-day-only .pill { font-size: 4.5vmin; padding: 1.4vmin 3.5vmin; }
+
+.calendar-scene .grid { position: relative; flex: 1; margin-left: 9vmin; }
+.calendar-scene .hour { position: absolute; left: 0; right: 0; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+.calendar-scene .hour .label {
+  position: absolute; right: calc(100% + 1.5vmin); top: -1.1vmin;
+  font-size: 1.8vmin; color: rgba(255, 255, 255, 0.5); white-space: nowrap;
+}
+.calendar-scene .event {
+  position: absolute; box-sizing: border-box; overflow: hidden;
+  min-height: 3.4vmin; padding: 0.6vmin 1.4vmin; border-radius: 1vmin;
+  box-shadow: 0 0.6vmin 2vmin rgba(0, 0, 0, 0.3);
+  display: flex; flex-direction: column; line-height: 1.25;
+}
+.calendar-scene .event .title {
+  font-size: 2.4vmin; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.calendar-scene .event .time { font-size: 1.9vmin; opacity: 0.85; white-space: nowrap; }
+.calendar-scene .event.short { flex-direction: row; align-items: baseline; gap: 1.2vmin; }
+.calendar-scene .event.past { opacity: 0.4; }
+.calendar-scene .now { position: absolute; left: -1vmin; right: 0; border-top: 0.35vmin solid #ffffff; z-index: 1; }
+.calendar-scene .now::before {
+  content: ''; position: absolute; left: -0.8vmin; top: -1.15vmin;
+  width: 2vmin; height: 2vmin; border-radius: 50%; background: #ffffff;
+}

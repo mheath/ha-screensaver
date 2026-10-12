@@ -1,6 +1,6 @@
 # HA Screensaver
 
-A screensaver for wall-mounted Fully Kiosk tablets: a Spring Boot app that connects to Home Assistant and rotates scenes in the browser. This version has the clock and the NetWare-style snakes. Design: `docs/superpowers/specs/2026-10-08-ha-screensaver-design.md`.
+A screensaver for wall-mounted Fully Kiosk tablets: a Spring Boot app that connects to Home Assistant and rotates scenes in the browser. This version has the clock, the NetWare-style snakes, and today's (or tomorrow's) calendar. Design: `docs/superpowers/specs/2026-10-08-ha-screensaver-design.md` and `docs/superpowers/specs/2026-10-09-calendar-scene-design.md`.
 
 ## Build
 
@@ -43,7 +43,7 @@ npx vite
 ```
 
 - `http://localhost:5173/?demo` — canned data, no backend needed.
-- `?scene=snakes` or `?scene=clock` — show only that scene.
+- `?scene=snakes`, `?scene=clock`, or `?scene=calendar` — show only that scene.
 - Without `?demo`, the dev server proxies `/api` to a Boot app on `localhost:8080`.
 
 The small orange dot in the bottom-right corner means the kiosk has lost the stream or the backend has lost Home Assistant.

@@ -4,13 +4,14 @@ import { startDemo } from './demo';
 import { SceneHost } from './host';
 import { ReloadPolicy } from './reload';
 import type { SceneContext, SceneModule } from './scene';
+import { calendarModule } from './scenes/calendar/calendar';
 import { clockModule } from './scenes/clock/clock';
 import { snakesModule } from './scenes/snakes/snakes';
 import { Scheduler, type Candidate } from './scheduler';
 import { openStream, type StreamHandlers } from './stream';
 import type { KioskConfig, SceneType, WorldState } from './types';
 
-const MODULES: Record<SceneType, SceneModule> = { clock: clockModule, snakes: snakesModule };
+const MODULES: Record<SceneType, SceneModule> = { clock: clockModule, snakes: snakesModule, calendar: calendarModule };
 const RETRY_MS = 5000;
 const FALLBACK_AFTER_MS = 5000;
 const FORCED_SCENE_MS = 60_000;
@@ -84,8 +85,9 @@ function showFallbackClock(): void {
     scenes: [],
     clock: { use24Hour: false },
     snakes: { guestCount: 0, minLength: 4, maxLength: 30, minSpeed: 2, maxSpeed: 20, pinned: [], guests: [] },
+    calendar: { allDayUntil: '18:00', calendars: [] },
   };
-  host.show(clockModule.create(), context(fallback, state ?? { haConnected: false, snakes: [] }));
+  host.show(clockModule.create(), context(fallback, state ?? { haConnected: false, snakes: [], calendar: { events: [] } }));
   currentType = 'clock';
 }
 
