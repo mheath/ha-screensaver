@@ -15,7 +15,11 @@
 	<description/>
 	<url/>
 	<licenses>
-		<license/>
+		<license>
+			<name>CC0-1.0</name>
+			<url>https://creativecommons.org/publicdomain/zero/1.0/</url>
+			<comments>Public domain dedication</comments>
+		</license>
 	</licenses>
 	<developers>
 		<developer/>

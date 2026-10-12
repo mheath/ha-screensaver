@@ -47,3 +47,7 @@ npx vite
 - Without `?demo`, the dev server proxies `/api` to a Boot app on `localhost:8080`.
 
 The small orange dot in the bottom-right corner means the kiosk has lost the stream or the backend has lost Home Assistant.
+
+## License
+
+Public domain. To the extent possible under law, the authors have waived all copyright and related or neighboring rights to this work under [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/); see [`LICENSE`](LICENSE). Dependencies, such as Spring and the VT323 font, keep their own licenses.
