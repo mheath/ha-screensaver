@@ -84,6 +84,14 @@
 						</goals>
 					</execution>
 				</executions>
+				<configuration>
+					<image>
+						<env>
+							<!-- Links the image published to ghcr.io back to this repository. -->
+							<BP_IMAGE_LABELS>org.opencontainers.image.source=https://github.com/mheath/ha-screensaver</BP_IMAGE_LABELS>
+						</env>
+					</image>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>com.github.eirslett</groupId>
