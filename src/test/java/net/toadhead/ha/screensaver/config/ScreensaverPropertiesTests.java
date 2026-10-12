@@ -4,17 +4,20 @@ import java.time.Duration;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.core.env.MapPropertySource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ScreensaverPropertiesTests {
 
-	private final ApplicationContextRunner runner = new ApplicationContextRunner().withUserConfiguration(Config.class)
+	private final ApplicationContextRunner runner = new ApplicationContextRunner()
+		.withUserConfiguration(Config.class, YamlTimeOfDayConverter.class)
 		.withPropertyValues("screensaver.home-assistant.url=ws://ha.test:8123/api/websocket",
 				"screensaver.home-assistant.token=secret");
 
@@ -158,6 +161,17 @@ class ScreensaverPropertiesTests {
 			assertThat(properties.calendar().calendars().get("school").color()).isNull();
 			assertThat(properties.rotation().scenes().get(SceneType.CALENDAR).weight()).isEqualTo(4.0);
 		});
+	}
+
+	@Test
+	void bindsAnUnquotedYamlTimeOfDay() {
+		// YAML 1.1 reads an unquoted 17:30 as the base-60 number 1050.
+		this.runner
+			.withInitializer((context) -> context.getEnvironment()
+				.getPropertySources()
+				.addFirst(new MapPropertySource("yaml", Map.of("screensaver.calendar.all-day-until", 1050))))
+			.run((context) -> assertThat(context.getBean(ScreensaverProperties.class).calendar().allDayUntil())
+				.isEqualTo(LocalTime.of(17, 30)));
 	}
 
 	@Test

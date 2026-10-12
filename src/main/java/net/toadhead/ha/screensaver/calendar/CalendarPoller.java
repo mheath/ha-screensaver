@@ -115,6 +115,13 @@ public class CalendarPoller {
 						calendar.entity(), failure.getMessage());
 				return;
 			}
+			if (!response.has(calendar.entity())) {
+				// Home Assistant keys the reply by its own entity id, which differs from ours
+				// when, for example, the configured id isn't all lower case.
+				logger.warn("Home Assistant's reply for calendar {} has no entry for {}, keeping its last events; "
+						+ "check the entity id", calendar.label(), calendar.entity());
+				return;
+			}
 			if (this.events.replace(id, CalendarEventParser.parse(response, calendar.entity(), id))) {
 				this.publisher.publishEvent(new CalendarUpdated());
 			}

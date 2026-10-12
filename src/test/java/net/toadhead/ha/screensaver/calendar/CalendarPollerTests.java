@@ -116,6 +116,19 @@ class CalendarPollerTests {
 	}
 
 	@Test
+	void keepsLastEventsWhenTheReplyIsForAnotherEntity() {
+		reply("calendar.family", "Dentist", "09:00");
+		CalendarPoller poller = poller("family");
+		poller.poll();
+		// For example HA lowercasing a configured "calendar.Family".
+		this.replies.put("calendar.family",
+				CompletableFuture.completedFuture(this.mapper.readTree("{\"calendar.other\":{\"events\":[]}}")));
+		poller.poll();
+		assertThat(this.events.events()).extracting(CalendarEvent::title).containsExactly("Dentist");
+		assertThat(this.published).hasSize(1);
+	}
+
+	@Test
 	void skipsWhileDisconnected() {
 		this.ha.markDisconnected();
 		poller("family").poll();
