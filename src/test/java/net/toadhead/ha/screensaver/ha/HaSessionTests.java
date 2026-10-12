@@ -1,6 +1,7 @@
 package net.toadhead.ha.screensaver.ha;
 
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -29,21 +30,23 @@ class HaSessionTests {
 	}
 
 	@Test
-	void subscribesThenLoadsStatesAfterAuthOk() {
+	void subscribesReadsConfigAndLoadsStatesAfterAuthOk() {
 		this.session.onMessage("{\"type\":\"auth_ok\"}");
 		assertThat(this.listener.authenticated).isTrue();
 		assertThat(sent(0).path("type").asString("")).isEqualTo("subscribe_events");
 		assertThat(sent(0).path("event_type").asString("")).isEqualTo("state_changed");
 		assertThat(sent(0).path("id").asInt(-1)).isEqualTo(1);
-		assertThat(sent(1).path("type").asString("")).isEqualTo("get_states");
+		assertThat(sent(1).path("type").asString("")).isEqualTo("get_config");
 		assertThat(sent(1).path("id").asInt(-1)).isEqualTo(2);
+		assertThat(sent(2).path("type").asString("")).isEqualTo("get_states");
+		assertThat(sent(2).path("id").asInt(-1)).isEqualTo(3);
 	}
 
 	@Test
 	void parsesStatesFromGetStatesResult() {
 		this.session.onMessage("{\"type\":\"auth_ok\"}");
 		this.session.onMessage("""
-				{"id":2,"type":"result","success":true,"result":[
+				{"id":3,"type":"result","success":true,"result":[
 				  {"entity_id":"sensor.power","state":"42.5",
 				   "attributes":{"unit_of_measurement":"W","friendly_name":"Power"},
 				   "last_changed":"2026-10-08T17:05:00.123456+00:00","last_updated":"2026-10-08T17:05:00.123456+00:00"}
@@ -99,7 +102,7 @@ class HaSessionTests {
 	void reportsFailedStateLoad() {
 		this.session.onMessage("{\"type\":\"auth_ok\"}");
 		this.session.onMessage("""
-				{"id":2,"type":"result","success":false,"error":{"code":"home_assistant_error","message":"Boom"}}""");
+				{"id":3,"type":"result","success":false,"error":{"code":"home_assistant_error","message":"Boom"}}""");
 		assertThat(this.listener.setupFailures).hasSize(1);
 		assertThat(this.listener.states).isEmpty();
 	}
@@ -108,7 +111,7 @@ class HaSessionTests {
 	void reportsStatesThatCannotBeParsed() {
 		this.session.onMessage("{\"type\":\"auth_ok\"}");
 		this.session.onMessage("""
-				{"id":2,"type":"result","success":true,"result":[
+				{"id":3,"type":"result","success":true,"result":[
 				  {"entity_id":"sensor.power","state":"1","attributes":{},"last_changed":"not a date"}]}""");
 		assertThat(this.listener.setupFailures).hasSize(1);
 	}
@@ -135,6 +138,33 @@ class HaSessionTests {
 		assertThat(reply).isCompletedExceptionally();
 	}
 
+	@Test
+	void reportsTimeZoneFromConfig() {
+		this.session.onMessage("{\"type\":\"auth_ok\"}");
+		this.session.onMessage("""
+				{"id":2,"type":"result","success":true,"result":{"time_zone":"America/Denver","version":"2026.10.0"}}""");
+		assertThat(this.listener.timeZone).isEqualTo(ZoneId.of("America/Denver"));
+		assertThat(this.listener.setupFailures).isEmpty();
+	}
+
+	@Test
+	void ignoresUnknownTimeZone() {
+		this.session.onMessage("{\"type\":\"auth_ok\"}");
+		this.session.onMessage("""
+				{"id":2,"type":"result","success":true,"result":{"time_zone":"Mars/Olympus_Mons"}}""");
+		assertThat(this.listener.timeZone).isNull();
+		assertThat(this.listener.setupFailures).isEmpty();
+	}
+
+	@Test
+	void failedConfigIsNotASetupFailure() {
+		this.session.onMessage("{\"type\":\"auth_ok\"}");
+		this.session.onMessage("""
+				{"id":2,"type":"result","success":false,"error":{"code":"unknown_command","message":"Unknown command."}}""");
+		assertThat(this.listener.timeZone).isNull();
+		assertThat(this.listener.setupFailures).isEmpty();
+	}
+
 	private JsonNode sent(int index) {
 		return this.mapper.readTree(this.sent.get(index));
 	}
@@ -152,6 +182,13 @@ class HaSessionTests {
 		final List<EntityState> changedStates = new ArrayList<>();
 
 		final List<Throwable> setupFailures = new ArrayList<>();
+
+		ZoneId timeZone;
+
+		@Override
+		public void onTimeZone(ZoneId zone) {
+			this.timeZone = zone;
+		}
 
 		@Override
 		public void onSetupFailed(Throwable failure) {

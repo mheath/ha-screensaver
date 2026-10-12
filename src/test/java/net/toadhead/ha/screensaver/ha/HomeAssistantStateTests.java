@@ -1,6 +1,7 @@
 package net.toadhead.ha.screensaver.ha;
 
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -42,6 +43,14 @@ class HomeAssistantStateTests {
 		assertThat(this.state.get("sensor.a")).map(EntityState::state).contains("2");
 		this.state.remove("sensor.a");
 		assertThat(this.state.get("sensor.a")).isEmpty();
+	}
+
+	@Test
+	void timeZoneDefaultsToTheJvmsUntilSet() {
+		HomeAssistantState state = new HomeAssistantState();
+		assertThat(state.timeZone()).isEqualTo(ZoneId.systemDefault());
+		state.setTimeZone(ZoneId.of("Pacific/Auckland"));
+		assertThat(state.timeZone()).isEqualTo(ZoneId.of("Pacific/Auckland"));
 	}
 
 	static EntityState entity(String id, String value) {

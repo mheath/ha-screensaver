@@ -1,5 +1,7 @@
 package net.toadhead.ha.screensaver.ha;
 
+import java.time.DateTimeException;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -8,6 +10,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ObjectNode;
@@ -18,6 +22,8 @@ import tools.jackson.databind.node.ObjectNode;
  * and reports what happened to the {@link Listener}.
  */
 final class HaSession {
+
+	private static final Logger logger = LoggerFactory.getLogger(HaSession.class);
 
 	private final String token;
 
@@ -82,11 +88,28 @@ final class HaSession {
 			.put("event_type", "state_changed");
 		this.subscriptionId = this.ids.get() + 1;
 		request(subscribe).whenComplete(this::reportSetupFailure);
+		// Home Assistant answers in order, so the time zone is known before states load.
+		request(this.mapper.createObjectNode().put("type", "get_config")).whenComplete(this::onConfig);
 		request(this.mapper.createObjectNode().put("type", "get_states")).thenAccept((result) -> {
 			List<EntityState> states = new ArrayList<>();
 			result.forEach((node) -> states.add(EntityState.fromJson(node)));
 			this.listener.onStates(states);
 		}).whenComplete(this::reportSetupFailure);
+	}
+
+	/** The time zone only moves calendar day boundaries, so problems are logged, not fatal. */
+	private void onConfig(JsonNode config, Throwable failure) {
+		if (failure != null) {
+			logger.warn("Could not read Home Assistant's configuration: {}", failure.getMessage());
+			return;
+		}
+		String zone = config.path("time_zone").asString("");
+		try {
+			this.listener.onTimeZone(ZoneId.of(zone));
+		}
+		catch (DateTimeException ex) {
+			logger.warn("Ignoring Home Assistant's unknown time zone '{}'", zone);
+		}
 	}
 
 	private void reportSetupFailure(Object ignored, Throwable failure) {
@@ -130,6 +153,12 @@ final class HaSession {
 		void onAuthFailed(String message);
 
 		void onStates(List<EntityState> states);
+
+		/**
+		 * Called with Home Assistant's configured time zone.
+		 * @param zone the time zone
+		 */
+		void onTimeZone(ZoneId zone);
 
 		/**
 		 * Called for every state change.

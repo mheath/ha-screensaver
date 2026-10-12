@@ -3,6 +3,7 @@ package net.toadhead.ha.screensaver.ha;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.time.Duration;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -15,7 +16,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 import net.toadhead.ha.screensaver.config.ScreensaverProperties;
 
@@ -31,9 +34,11 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @ConditionalOnBooleanProperty(name = "screensaver.home-assistant.enabled", matchIfMissing = true)
-public class HomeAssistantConnector implements SmartLifecycle {
+public class HomeAssistantConnector implements SmartLifecycle, HomeAssistantServices {
 
 	private static final Logger logger = LoggerFactory.getLogger(HomeAssistantConnector.class);
+
+	private static final Duration SERVICE_CALL_TIMEOUT = Duration.ofSeconds(30);
 
 	private final ScreensaverProperties.HomeAssistant config;
 
@@ -88,6 +93,24 @@ public class HomeAssistantConnector implements SmartLifecycle {
 	@Override
 	public boolean isRunning() {
 		return this.running;
+	}
+
+	@Override
+	public CompletableFuture<JsonNode> callService(String domain, String service, JsonNode target, JsonNode data) {
+		Connection current = this.connection;
+		if (current == null || !current.ready()) {
+			return CompletableFuture.failedFuture(new HaRequestException("not connected to Home Assistant"));
+		}
+		ObjectNode message = this.mapper.createObjectNode()
+			.put("type", "call_service")
+			.put("domain", domain)
+			.put("service", service)
+			.put("return_response", true);
+		message.set("target", target);
+		message.set("service_data", data);
+		return current.session.request(message)
+			.orTimeout(SERVICE_CALL_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
+			.thenApply((result) -> result.path("response"));
 	}
 
 	private void connect() {
@@ -220,6 +243,10 @@ public class HomeAssistantConnector implements SmartLifecycle {
 			this.sending = this.sending.exceptionally((ex) -> null).thenCompose((ignored) -> target.sendText(text, true));
 		}
 
+		boolean ready() {
+			return this.authenticated && !this.closed.get() && HomeAssistantConnector.this.state.connected();
+		}
+
 		void abort(String why) {
 			WebSocket target = this.socket;
 			if (target != null) {
@@ -282,9 +309,16 @@ public class HomeAssistantConnector implements SmartLifecycle {
 		}
 
 		@Override
+		public void onTimeZone(ZoneId zone) {
+			HomeAssistantConnector.this.state.setTimeZone(zone);
+			logger.info("Home Assistant's time zone is {}", zone);
+		}
+
+		@Override
 		public void onStates(List<EntityState> states) {
 			HomeAssistantConnector.this.state.markConnected(states);
 			publish();
+			HomeAssistantConnector.this.events.publishEvent(new HomeAssistantConnected());
 		}
 
 		@Override

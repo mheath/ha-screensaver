@@ -1,5 +1,6 @@
 package net.toadhead.ha.screensaver.ha;
 
+import java.time.ZoneId;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
@@ -17,6 +18,8 @@ public class HomeAssistantState {
 	private final Map<String, EntityState> states = new ConcurrentHashMap<>();
 
 	private volatile boolean connected;
+
+	private volatile ZoneId timeZone = ZoneId.systemDefault();
 
 	public boolean connected() {
 		return this.connected;
@@ -44,6 +47,18 @@ public class HomeAssistantState {
 
 	public Optional<EntityState> get(String entityId) {
 		return Optional.ofNullable(this.states.get(entityId));
+	}
+
+	/**
+	 * Home Assistant's time zone, or the JVM's until Home Assistant reports one.
+	 * @return the time zone
+	 */
+	public ZoneId timeZone() {
+		return this.timeZone;
+	}
+
+	public void setTimeZone(ZoneId timeZone) {
+		this.timeZone = timeZone;
 	}
 
 }

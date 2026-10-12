@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import tools.jackson.databind.JsonNode;
@@ -89,6 +90,28 @@ public final class FakeHomeAssistant implements AutoCloseable {
 		this.handler.silent = false;
 	}
 
+	public void timeZone(String zone) {
+		this.handler.timeZone = zone;
+	}
+
+	/** Makes {@code calendar.get_events} for {@code entityId} return these events. */
+	public void calendar(String entityId, List<Map<String, Object>> events) {
+		this.handler.calendars.put(entityId, events);
+	}
+
+	/** Every {@code call_service} message received, oldest first. */
+	public List<JsonNode> serviceCalls() {
+		return List.copyOf(this.handler.serviceCalls);
+	}
+
+	public static Map<String, Object> event(String summary, String start, String end) {
+		Map<String, Object> event = new LinkedHashMap<>();
+		event.put("start", start);
+		event.put("end", end);
+		event.put("summary", summary);
+		return event;
+	}
+
 	public void dropConnections() throws IOException {
 		for (WebSocketSession session : this.handler.sessions) {
 			session.close(CloseStatus.GOING_AWAY);
@@ -133,6 +156,12 @@ public final class FakeHomeAssistant implements AutoCloseable {
 
 		volatile boolean silent;
 
+		volatile String timeZone = "America/Denver";
+
+		final Map<String, List<Map<String, Object>>> calendars = new ConcurrentHashMap<>();
+
+		final List<JsonNode> serviceCalls = new CopyOnWriteArrayList<>();
+
 		@Override
 		public void afterConnectionEstablished(WebSocketSession session) {
 			this.sessions.add(session);
@@ -163,6 +192,11 @@ public final class FakeHomeAssistant implements AutoCloseable {
 				}
 				case "get_states" -> send(session, result(id, this.states));
 				case "ping" -> send(session, Map.of("id", id, "type", "pong"));
+				case "get_config" -> send(session, result(id, Map.of("time_zone", this.timeZone, "version", "2026.10.0")));
+				case "call_service" -> {
+					this.serviceCalls.add(request);
+					send(session, serviceReply(id, request));
+				}
 				default -> send(session, Map.of("id", id, "type", "result", "success", false, "error",
 						Map.of("code", "unknown_command", "message", "Unknown command.")));
 			}
@@ -180,6 +214,19 @@ public final class FakeHomeAssistant implements AutoCloseable {
 			catch (IOException ex) {
 				throw new IllegalStateException(ex);
 			}
+		}
+
+		private Map<String, Object> serviceReply(int id, JsonNode request) {
+			String entityId = request.path("target").path("entity_id").asString("");
+			boolean getEvents = "calendar".equals(request.path("domain").asString(""))
+					&& "get_events".equals(request.path("service").asString(""));
+			List<Map<String, Object>> events = this.calendars.get(entityId);
+			if (!getEvents || events == null) {
+				return Map.of("id", id, "type", "result", "success", false, "error",
+						Map.of("code", "service_validation_error", "message", "Entity " + entityId + " not found"));
+			}
+			return result(id, Map.of("context", Map.of("id", "ctx"), "response",
+					Map.of(entityId, Map.of("events", events))));
 		}
 
 		private static Map<String, Object> result(int id, Object result) {

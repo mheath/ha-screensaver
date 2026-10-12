@@ -1,9 +1,14 @@
 package net.toadhead.ha.screensaver.ha;
 
 import java.time.Duration;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 
@@ -11,7 +16,9 @@ import fakeha.FakeHomeAssistant;
 import net.toadhead.ha.screensaver.config.ScreensaverProperties;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -21,6 +28,8 @@ class HomeAssistantConnectorTests {
 	private final HomeAssistantState state = new HomeAssistantState();
 
 	private final AtomicInteger updates = new AtomicInteger();
+
+	private final List<Object> published = new CopyOnWriteArrayList<>();
 
 	private FakeHomeAssistant fake;
 
@@ -100,12 +109,80 @@ class HomeAssistantConnectorTests {
 		assertThat(this.fake.authAttempts()).isEqualTo(1);
 	}
 
+	@Test
+	void storesHomeAssistantsTimeZone() {
+		start(List.of(), FakeHomeAssistant.TOKEN);
+		await(this.state::connected, "connected");
+		assertThat(this.state.timeZone()).isEqualTo(ZoneId.of("America/Denver"));
+	}
+
+	@Test
+	void publishesConnectedAfterEveryStatesLoad() throws Exception {
+		start(List.of(), FakeHomeAssistant.TOKEN);
+		await(() -> connectedEvents() == 1, "first connected event");
+		this.fake.dropConnections();
+		await(() -> connectedEvents() == 2, "connected event after reconnect");
+	}
+
+	@Test
+	void callsServicesAndReturnsTheirResponse() throws Exception {
+		start(List.of(), FakeHomeAssistant.TOKEN);
+		await(this.state::connected, "connected");
+		this.fake.calendar("calendar.family", List.of(FakeHomeAssistant.event("Dentist",
+				"2026-10-09T09:00:00-06:00", "2026-10-09T10:30:00-06:00")));
+		ObjectNode data = JsonMapper.shared()
+			.createObjectNode()
+			.put("start_date_time", "2026-10-09T00:00:00-06:00")
+			.put("end_date_time", "2026-10-11T00:00:00-06:00");
+
+		JsonNode response = this.connector.callService("calendar", "get_events", target("calendar.family"), data)
+			.get(5, TimeUnit.SECONDS);
+
+		assertThat(response.path("calendar.family").path("events").get(0).path("summary").asString(""))
+			.isEqualTo("Dentist");
+		JsonNode call = this.fake.serviceCalls().get(0);
+		assertThat(call.path("return_response").asBoolean(false)).isTrue();
+		assertThat(call.path("target").path("entity_id").asString("")).isEqualTo("calendar.family");
+		assertThat(call.path("service_data").path("start_date_time").asString("")).isEqualTo("2026-10-09T00:00:00-06:00");
+	}
+
+	@Test
+	void serviceErrorsFailTheCall() {
+		start(List.of(), FakeHomeAssistant.TOKEN);
+		await(this.state::connected, "connected");
+		CompletableFuture<JsonNode> reply = this.connector.callService("calendar", "get_events",
+				target("calendar.nope"), JsonMapper.shared().createObjectNode());
+		assertThat(reply).failsWithin(Duration.ofSeconds(5))
+			.withThrowableOfType(ExecutionException.class)
+			.withCauseInstanceOf(HaRequestException.class)
+			.withMessageContaining("not found");
+	}
+
+	@Test
+	void serviceCallsFailImmediatelyWhenNotConnected() {
+		start(List.of(), "wrong-token");
+		CompletableFuture<JsonNode> reply = this.connector.callService("calendar", "get_events",
+				target("calendar.family"), JsonMapper.shared().createObjectNode());
+		assertThat(reply).isCompletedExceptionally();
+		assertThat(reply.exceptionNow()).isInstanceOf(HaRequestException.class);
+	}
+
+	private long connectedEvents() {
+		return this.published.stream().filter(HomeAssistantConnected.class::isInstance).count();
+	}
+
+	private static ObjectNode target(String entityId) {
+		return JsonMapper.shared().createObjectNode().put("entity_id", entityId);
+	}
+
 	private void start(List<Map<String, Object>> states, String token) {
 		this.fake = FakeHomeAssistant.start(states);
 		var config = new ScreensaverProperties.HomeAssistant(this.fake.uri(), token, true, Duration.ofMillis(50),
 				Duration.ofMillis(200), Duration.ofMillis(100), Duration.ofMillis(300));
-		this.connector = new HomeAssistantConnector(config, this.state, (event) -> this.updates.incrementAndGet(),
-				JsonMapper.shared());
+		this.connector = new HomeAssistantConnector(config, this.state, (event) -> {
+			this.updates.incrementAndGet();
+			this.published.add(event);
+		}, JsonMapper.shared());
 		this.connector.start();
 	}
 
