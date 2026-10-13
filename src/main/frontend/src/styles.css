@@ -1,4 +1,4 @@
-html, body { margin: 0; height: 100%; background: #000000; overflow: hidden; cursor: none; }
+html, body { margin: 0; height: 100%; background: #000000; overflow: hidden; }
 #stage { position: fixed; inset: 0; }
 .layer { position: absolute; inset: 0; overflow: hidden; opacity: 0; transition: opacity 1s ease; }
 .layer.visible { opacity: 1; }
