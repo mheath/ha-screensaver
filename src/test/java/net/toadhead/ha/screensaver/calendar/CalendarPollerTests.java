@@ -4,7 +4,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -12,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import net.toadhead.ha.screensaver.MutableClock;
 import net.toadhead.ha.screensaver.config.ScreensaverProperties.CalendarEntry;
 import net.toadhead.ha.screensaver.ha.HaRequestException;
 import net.toadhead.ha.screensaver.ha.HomeAssistantConnected;
@@ -195,39 +195,6 @@ class CalendarPollerTests {
 		JsonNode response = this.mapper.readTree("{\"" + entityId + "\":{\"events\":[{\"summary\":\"" + title
 				+ "\",\"start\":\"2026-10-09T" + time + ":00-06:00\",\"end\":\"2026-10-09T23:00:00-06:00\"}]}}");
 		this.replies.put(entityId, CompletableFuture.completedFuture(response));
-	}
-
-	static final class MutableClock extends Clock {
-
-		private Instant instant;
-
-		MutableClock(Instant instant) {
-			this.instant = instant;
-		}
-
-		void set(Instant instant) {
-			this.instant = instant;
-		}
-
-		void advance(Duration duration) {
-			this.instant = this.instant.plus(duration);
-		}
-
-		@Override
-		public ZoneId getZone() {
-			return ZoneOffset.UTC;
-		}
-
-		@Override
-		public Clock withZone(ZoneId zone) {
-			return this;
-		}
-
-		@Override
-		public Instant instant() {
-			return this.instant;
-		}
-
 	}
 
 }

@@ -1,15 +1,21 @@
 package net.toadhead.ha.screensaver.stream;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+import net.toadhead.ha.screensaver.MutableClock;
+import net.toadhead.ha.screensaver.batteries.LowBattery;
 import net.toadhead.ha.screensaver.calendar.CalendarEvent;
 import net.toadhead.ha.screensaver.calendar.CalendarEvents;
 import net.toadhead.ha.screensaver.calendar.CalendarUpdated;
 import net.toadhead.ha.screensaver.config.TestProperties;
+import net.toadhead.ha.screensaver.ha.EntityState;
 import net.toadhead.ha.screensaver.ha.HomeAssistantState;
 import net.toadhead.ha.screensaver.ha.HomeAssistantUpdated;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.json.JsonMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -53,6 +59,25 @@ class WorldStateServiceTests {
 		assertThat(this.service.current().version()).isEqualTo(1);
 		assertThat(this.service.current().state().calendar().events()).extracting(CalendarEvent::title)
 			.containsExactly("Birthday");
+	}
+
+	@Test
+	void tickPicksUpBatteriesThatBecomeDead() {
+		MutableClock clock = new MutableClock(Instant.parse("2026-11-10T20:00:00Z"));
+		WorldStateService service = new WorldStateService(TestProperties.withSnakes(Map.of(), Map.of()), this.ha,
+				this.calendar, clock);
+		this.ha.markConnected(List.of(new EntityState("sensor.lock_battery", "unavailable",
+				JsonMapper.shared().readTree("{\"device_class\":\"battery\",\"unit_of_measurement\":\"%\"}"),
+				clock.instant())));
+		service.onHomeAssistantUpdated(new HomeAssistantUpdated());
+		assertThat(service.current().state().lowBatteries()).isEmpty();
+		clock.advance(Duration.ofMinutes(59));
+		service.tick();
+		assertThat(service.current().state().lowBatteries()).isEmpty();
+		clock.advance(Duration.ofMinutes(1));
+		service.tick();
+		assertThat(service.current().state().lowBatteries()).extracting(LowBattery::status)
+			.containsExactly(LowBattery.Status.DEAD);
 	}
 
 }

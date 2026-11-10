@@ -2,6 +2,7 @@ package net.toadhead.ha.screensaver.stream;
 
 import java.util.List;
 
+import net.toadhead.ha.screensaver.batteries.LowBattery;
 import net.toadhead.ha.screensaver.calendar.CalendarEvent;
 
 /**
@@ -11,8 +12,10 @@ import net.toadhead.ha.screensaver.calendar.CalendarEvent;
  * @param haConnected whether Home Assistant is currently connected
  * @param snakes current value of every configured snake, pinned first
  * @param calendar today's and tomorrow's calendar events
+ * @param lowBatteries dead and low batteries, sorted for display
  */
-public record WorldState(boolean haConnected, List<SnakeValue> snakes, Calendar calendar) {
+public record WorldState(boolean haConnected, List<SnakeValue> snakes, Calendar calendar,
+		List<LowBattery> lowBatteries) {
 
 	/**
 	 * Events from every configured calendar, from the start of today to the end of

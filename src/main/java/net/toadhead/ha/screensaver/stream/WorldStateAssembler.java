@@ -1,10 +1,12 @@
 package net.toadhead.ha.screensaver.stream;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import net.toadhead.ha.screensaver.batteries.LowBatteryDetector;
 import net.toadhead.ha.screensaver.calendar.CalendarEvent;
 import net.toadhead.ha.screensaver.config.ScreensaverProperties;
 import net.toadhead.ha.screensaver.config.ScreensaverProperties.Snake;
@@ -21,12 +23,13 @@ final class WorldStateAssembler {
 	}
 
 	static WorldState assemble(ScreensaverProperties properties, HomeAssistantState ha,
-			List<CalendarEvent> calendarEvents) {
+			List<CalendarEvent> calendarEvents, Instant now) {
 		List<SnakeValue> snakes = Stream
 			.concat(properties.snakes().pinned().entrySet().stream(), properties.snakes().guests().entrySet().stream())
 			.map((entry) -> snakeValue(entry, ha))
 			.toList();
-		return new WorldState(ha.connected(), snakes, new WorldState.Calendar(calendarEvents));
+		return new WorldState(ha.connected(), snakes, new WorldState.Calendar(calendarEvents),
+				LowBatteryDetector.detect(ha.all(), ha.registry(), properties.batteries(), now));
 	}
 
 	private static SnakeValue snakeValue(Map.Entry<String, Snake> entry, HomeAssistantState ha) {

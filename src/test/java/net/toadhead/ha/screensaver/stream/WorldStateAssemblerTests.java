@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.toadhead.ha.screensaver.batteries.LowBattery;
 import net.toadhead.ha.screensaver.calendar.CalendarEvent;
 import net.toadhead.ha.screensaver.config.ScreensaverProperties;
 import net.toadhead.ha.screensaver.config.ScreensaverProperties.Snake;
@@ -25,7 +26,7 @@ class WorldStateAssemblerTests {
 	@Test
 	void numericStateBecomesValueWithUnit() {
 		this.ha.markConnected(List.of(entity("sensor.power", "8.25", "{\"unit_of_measurement\":\"kW\"}")));
-		WorldState state = WorldStateAssembler.assemble(properties("power", "sensor.power"), this.ha, List.of());
+		WorldState state = WorldStateAssembler.assemble(properties("power", "sensor.power"), this.ha, List.of(), Instant.now());
 		assertThat(state.haConnected()).isTrue();
 		assertThat(state.snakes()).containsExactly(new SnakeValue("power", 8.25, "kW", true));
 	}
@@ -33,7 +34,7 @@ class WorldStateAssemblerTests {
 	@Test
 	void entityWithoutUnitHasNullUnit() {
 		this.ha.markConnected(List.of(entity("zone.home", "3", "{}")));
-		WorldState state = WorldStateAssembler.assemble(properties("people", "zone.home"), this.ha, List.of());
+		WorldState state = WorldStateAssembler.assemble(properties("people", "zone.home"), this.ha, List.of(), Instant.now());
 		assertThat(state.snakes()).containsExactly(new SnakeValue("people", 3.0, null, true));
 	}
 
@@ -41,7 +42,7 @@ class WorldStateAssemblerTests {
 	void nonNumericStatesAreUnavailable() {
 		for (String raw : List.of("unavailable", "unknown", "on", "", "NaN", "Infinity")) {
 			this.ha.markConnected(List.of(entity("sensor.x", raw, "{}")));
-			WorldState state = WorldStateAssembler.assemble(properties("x", "sensor.x"), this.ha, List.of());
+			WorldState state = WorldStateAssembler.assemble(properties("x", "sensor.x"), this.ha, List.of(), Instant.now());
 			assertThat(state.snakes()).as(raw).containsExactly(new SnakeValue("x", null, null, false));
 		}
 	}
@@ -49,7 +50,7 @@ class WorldStateAssemblerTests {
 	@Test
 	void missingEntityIsUnavailable() {
 		this.ha.markConnected(List.of());
-		WorldState state = WorldStateAssembler.assemble(properties("x", "sensor.missing"), this.ha, List.of());
+		WorldState state = WorldStateAssembler.assemble(properties("x", "sensor.missing"), this.ha, List.of(), Instant.now());
 		assertThat(state.snakes()).containsExactly(new SnakeValue("x", null, null, false));
 	}
 
@@ -57,7 +58,7 @@ class WorldStateAssemblerTests {
 	void keepsLastKnownValuesButReportsDisconnected() {
 		this.ha.markConnected(List.of(entity("sensor.power", "5", "{}")));
 		this.ha.markDisconnected();
-		WorldState state = WorldStateAssembler.assemble(properties("power", "sensor.power"), this.ha, List.of());
+		WorldState state = WorldStateAssembler.assemble(properties("power", "sensor.power"), this.ha, List.of(), Instant.now());
 		assertThat(state.haConnected()).isFalse();
 		assertThat(state.snakes().get(0).value()).isEqualTo(5.0);
 	}
@@ -69,7 +70,7 @@ class WorldStateAssemblerTests {
 		pinned.put("a", TestProperties.snake("sensor.a", "A"));
 		ScreensaverProperties properties = TestProperties.withSnakes(pinned,
 				Map.of("g", TestProperties.snake("sensor.g", "G")));
-		WorldState state = WorldStateAssembler.assemble(properties, this.ha, List.of());
+		WorldState state = WorldStateAssembler.assemble(properties, this.ha, List.of(), Instant.now());
 		assertThat(state.snakes()).extracting(SnakeValue::id).containsExactly("b", "a", "g");
 	}
 
@@ -80,7 +81,7 @@ class WorldStateAssemblerTests {
 	@Test
 	void includesCalendarEvents() {
 		CalendarEvent birthday = new CalendarEvent("Birthday", "2026-10-09", "2026-10-10", true, "family");
-		WorldState state = WorldStateAssembler.assemble(properties("power", "sensor.power"), this.ha, List.of(birthday));
+		WorldState state = WorldStateAssembler.assemble(properties("power", "sensor.power"), this.ha, List.of(birthday), Instant.now());
 		assertThat(state.calendar().events()).containsExactly(birthday);
 	}
 
@@ -88,7 +89,7 @@ class WorldStateAssemblerTests {
 	void serializesCalendarEventsForTheBrowser() {
 		CalendarEvent soccer = new CalendarEvent("Soccer", "2026-10-09T15:00:00-06:00", "2026-10-09T17:00:00-06:00",
 				false, "school");
-		WorldState state = WorldStateAssembler.assemble(properties("power", "sensor.power"), this.ha, List.of(soccer));
+		WorldState state = WorldStateAssembler.assemble(properties("power", "sensor.power"), this.ha, List.of(soccer), Instant.now());
 		JsonNode json = JsonMapper.shared().readTree(JsonMapper.shared().writeValueAsString(state));
 		JsonNode event = json.path("calendar").path("events").get(0);
 		assertThat(event.path("title").asString("")).isEqualTo("Soccer");
@@ -96,6 +97,31 @@ class WorldStateAssemblerTests {
 		assertThat(event.path("end").asString("")).isEqualTo("2026-10-09T17:00:00-06:00");
 		assertThat(event.path("allDay").asBoolean(true)).isFalse();
 		assertThat(event.path("calendar").asString("")).isEqualTo("school");
+	}
+
+	@Test
+	void includesLowBatteries() {
+		this.ha.markConnected(List.of(new EntityState("sensor.porch_battery", "4",
+				json("{\"device_class\":\"battery\",\"unit_of_measurement\":\"%\",\"friendly_name\":\"Porch motion\"}"),
+				Instant.now())));
+		WorldState state = WorldStateAssembler.assemble(TestProperties.withSnakes(Map.of(), Map.of()), this.ha,
+				List.of(), Instant.now());
+		assertThat(state.lowBatteries())
+			.containsExactly(new LowBattery("sensor.porch_battery", "Porch motion", LowBattery.Status.LOW, 4));
+	}
+
+	@Test
+	void serializesLowBatteriesForTheBrowser() {
+		WorldState state = new WorldState(true, List.of(), new WorldState.Calendar(List.of()),
+				List.of(new LowBattery("d1", "Back door lock", LowBattery.Status.DEAD, null)));
+		JsonNode battery = JsonMapper.shared().valueToTree(state).path("lowBatteries").path(0);
+		assertThat(battery.path("status").asString("")).isEqualTo("dead");
+		assertThat(battery.path("level").isNull()).isTrue();
+		assertThat(battery.path("name").asString("")).isEqualTo("Back door lock");
+	}
+
+	private static JsonNode json(String json) {
+		return JsonMapper.shared().readTree(json);
 	}
 
 	static EntityState entity(String id, String state, String attributesJson) {
