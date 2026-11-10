@@ -187,10 +187,14 @@ public final class FakeHomeAssistant implements AutoCloseable {
 					}
 				}
 				case "subscribe_events" -> {
-					this.subscriptionId = id;
+					// Registry subscriptions must not take over the id state changes are pushed with.
+					if ("state_changed".equals(request.path("event_type").asString(""))) {
+						this.subscriptionId = id;
+					}
 					send(session, result(id, null));
 				}
 				case "get_states" -> send(session, result(id, this.states));
+				case "config/entity_registry/list", "config/device_registry/list" -> send(session, result(id, List.of()));
 				case "ping" -> send(session, Map.of("id", id, "type", "pong"));
 				case "get_config" -> send(session, result(id, Map.of("time_zone", this.timeZone, "version", "2026.10.0")));
 				case "call_service" -> {

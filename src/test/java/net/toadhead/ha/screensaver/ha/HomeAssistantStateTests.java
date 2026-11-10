@@ -3,6 +3,7 @@ package net.toadhead.ha.screensaver.ha;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;
@@ -43,6 +44,22 @@ class HomeAssistantStateTests {
 		assertThat(this.state.get("sensor.a")).map(EntityState::state).contains("2");
 		this.state.remove("sensor.a");
 		assertThat(this.state.get("sensor.a")).isEmpty();
+	}
+
+	@Test
+	void allReturnsEveryEntity() {
+		this.state.markConnected(List.of(entity("sensor.a", "1"), entity("sensor.b", "2")));
+		assertThat(this.state.all()).extracting(EntityState::entityId).containsExactlyInAnyOrder("sensor.a", "sensor.b");
+	}
+
+	@Test
+	void registryStartsEmptyAndSurvivesReconnect() {
+		assertThat(this.state.registry()).isSameAs(DeviceRegistry.EMPTY);
+		DeviceRegistry registry = new DeviceRegistry(Map.of("sensor.a", "d1"), Map.of("d1", "Lock"));
+		this.state.setRegistry(registry);
+		this.state.markDisconnected();
+		this.state.markConnected(List.of(entity("sensor.a", "1")));
+		assertThat(this.state.registry()).isSameAs(registry);
 	}
 
 	@Test

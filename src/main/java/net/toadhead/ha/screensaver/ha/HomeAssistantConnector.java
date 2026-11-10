@@ -322,6 +322,12 @@ public class HomeAssistantConnector implements SmartLifecycle, HomeAssistantServ
 		}
 
 		@Override
+		public void onRegistry(DeviceRegistry registry) {
+			HomeAssistantConnector.this.state.setRegistry(registry);
+			publish();
+		}
+
+		@Override
 		public void onStateChanged(String entityId, EntityState newState) {
 			if (newState == null) {
 				HomeAssistantConnector.this.state.remove(entityId);

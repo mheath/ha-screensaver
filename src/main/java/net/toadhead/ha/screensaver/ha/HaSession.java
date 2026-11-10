@@ -5,7 +5,9 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -38,6 +40,20 @@ final class HaSession {
 	private final Map<Integer, CompletableFuture<JsonNode>> pending = new ConcurrentHashMap<>();
 
 	private volatile int subscriptionId = -1;
+
+	private final Set<Integer> registrySubscriptionIds = ConcurrentHashMap.newKeySet();
+
+	/**
+	 * Guards the registry load flags: loads finish on the message thread, but also
+	 * on whichever thread calls {@link #close()}.
+	 */
+	private final Object registryLock = new Object();
+
+	private boolean registryLoading;
+
+	private boolean registryReloadRequested;
+
+	private boolean closed;
 
 	HaSession(String token, JsonMapper mapper, Consumer<String> outbound, Listener listener) {
 		this.token = token;
@@ -78,6 +94,9 @@ final class HaSession {
 	}
 
 	void close() {
+		synchronized (this.registryLock) {
+			this.closed = true;
+		}
 		this.pending.values().forEach((reply) -> reply.completeExceptionally(new HaRequestException("connection closed")));
 		this.pending.clear();
 	}
@@ -95,6 +114,68 @@ final class HaSession {
 			result.forEach((node) -> states.add(EntityState.fromJson(node)));
 			this.listener.onStates(states);
 		}).whenComplete(this::reportSetupFailure);
+		subscribeToRegistry("entity_registry_updated");
+		subscribeToRegistry("device_registry_updated");
+		loadRegistries();
+	}
+
+	/** Device names are a nicety, so registry problems are logged, not fatal. */
+	private void subscribeToRegistry(String eventType) {
+		ObjectNode subscribe = this.mapper.createObjectNode()
+			.put("type", "subscribe_events")
+			.put("event_type", eventType);
+		request(subscribe).whenComplete((result, failure) -> {
+			if (failure != null) {
+				logger.warn("Could not subscribe to Home Assistant's {} events: {}", eventType,
+						unwrap(failure).getMessage());
+			}
+		});
+		// Events are read on the thread running this, so none can arrive before the id is known.
+		this.registrySubscriptionIds.add(subscribe.path("id").asInt(-1));
+	}
+
+	/**
+	 * Loads both registries, or, if a load is already in flight, loads them again
+	 * once it finishes, so a burst of change events costs at most one more load.
+	 */
+	private void loadRegistries() {
+		synchronized (this.registryLock) {
+			if (this.closed) {
+				return;
+			}
+			if (this.registryLoading) {
+				this.registryReloadRequested = true;
+				return;
+			}
+			this.registryLoading = true;
+		}
+		CompletableFuture<JsonNode> entities = request(
+				this.mapper.createObjectNode().put("type", "config/entity_registry/list"));
+		CompletableFuture<JsonNode> devices = request(
+				this.mapper.createObjectNode().put("type", "config/device_registry/list"));
+		CompletableFuture.allOf(entities, devices)
+			.thenRun(() -> this.listener.onRegistry(DeviceRegistry.fromJson(entities.join(), devices.join())))
+			.whenComplete((ignored, failure) -> {
+				if (failure != null) {
+					logger.warn("Could not read Home Assistant's device registry: {}", unwrap(failure).getMessage());
+				}
+				registriesLoaded();
+			});
+	}
+
+	private void registriesLoaded() {
+		synchronized (this.registryLock) {
+			this.registryLoading = false;
+			if (!this.registryReloadRequested) {
+				return;
+			}
+			this.registryReloadRequested = false;
+		}
+		loadRegistries();
+	}
+
+	private static Throwable unwrap(Throwable failure) {
+		return (failure instanceof CompletionException && failure.getCause() != null) ? failure.getCause() : failure;
 	}
 
 	/** The time zone only moves calendar day boundaries, so problems are logged, not fatal. */
@@ -133,7 +214,12 @@ final class HaSession {
 	}
 
 	private void onEvent(JsonNode message) {
-		if (message.path("id").asInt(-1) != this.subscriptionId) {
+		int id = message.path("id").asInt(-1);
+		if (this.registrySubscriptionIds.contains(id)) {
+			loadRegistries();
+			return;
+		}
+		if (id != this.subscriptionId) {
 			return;
 		}
 		JsonNode data = message.path("event").path("data");
@@ -166,6 +252,13 @@ final class HaSession {
 		 * @param newState the new state, or {@code null} if the entity was removed
 		 */
 		void onStateChanged(String entityId, EntityState newState);
+
+		/**
+		 * Called when Home Assistant's device and entity registries have loaded, and
+		 * again whenever they change.
+		 * @param registry the registries
+		 */
+		void onRegistry(DeviceRegistry registry);
 
 		/**
 		 * Called when subscribing or loading states fails, so the connection can be

@@ -2,6 +2,7 @@ package net.toadhead.ha.screensaver.ha;
 
 import java.time.ZoneId;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -10,7 +11,8 @@ import org.springframework.stereotype.Component;
 
 /**
  * Last known state of every Home Assistant entity, plus whether we're connected.
- * States are kept while disconnected so screens keep showing last-known values.
+ * States, and the device registry, are kept while disconnected so screens keep
+ * showing last-known values.
  */
 @Component
 public class HomeAssistantState {
@@ -20,6 +22,8 @@ public class HomeAssistantState {
 	private volatile boolean connected;
 
 	private volatile ZoneId timeZone = ZoneId.systemDefault();
+
+	private volatile DeviceRegistry registry = DeviceRegistry.EMPTY;
 
 	public boolean connected() {
 		return this.connected;
@@ -47,6 +51,27 @@ public class HomeAssistantState {
 
 	public Optional<EntityState> get(String entityId) {
 		return Optional.ofNullable(this.states.get(entityId));
+	}
+
+	/**
+	 * Every entity's last known state.
+	 * @return a snapshot copy
+	 */
+	public Collection<EntityState> all() {
+		return List.copyOf(this.states.values());
+	}
+
+	/**
+	 * Home Assistant's device registry, or {@link DeviceRegistry#EMPTY} until it
+	 * has loaded.
+	 * @return the registry
+	 */
+	public DeviceRegistry registry() {
+		return this.registry;
+	}
+
+	public void setRegistry(DeviceRegistry registry) {
+		this.registry = registry;
 	}
 
 	/**

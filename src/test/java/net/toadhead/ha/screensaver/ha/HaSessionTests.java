@@ -165,6 +165,78 @@ class HaSessionTests {
 		assertThat(this.listener.setupFailures).isEmpty();
 	}
 
+	@Test
+	void subscribesToRegistryChangesAndLoadsRegistriesAfterStates() {
+		this.session.onMessage("{\"type\":\"auth_ok\"}");
+		assertThat(sent(3).path("type").asString("")).isEqualTo("subscribe_events");
+		assertThat(sent(3).path("event_type").asString("")).isEqualTo("entity_registry_updated");
+		assertThat(sent(4).path("event_type").asString("")).isEqualTo("device_registry_updated");
+		assertThat(sent(5).path("type").asString("")).isEqualTo("config/entity_registry/list");
+		assertThat(sent(5).path("id").asInt(-1)).isEqualTo(6);
+		assertThat(sent(6).path("type").asString("")).isEqualTo("config/device_registry/list");
+		assertThat(sent(6).path("id").asInt(-1)).isEqualTo(7);
+	}
+
+	@Test
+	void reportsTheRegistry() {
+		this.session.onMessage("{\"type\":\"auth_ok\"}");
+		answerRegistries();
+		assertThat(this.listener.registry.deviceId("sensor.lock_battery")).contains("d1");
+		assertThat(this.listener.registry.deviceName("d1")).contains("Back door lock");
+	}
+
+	@Test
+	void registryFailureIsNotFatal() {
+		this.session.onMessage("{\"type\":\"auth_ok\"}");
+		this.session.onMessage("{\"id\":6,\"type\":\"result\",\"success\":false,\"error\":{\"message\":\"Unknown command\"}}");
+		this.session.onMessage("{\"id\":7,\"type\":\"result\",\"success\":true,\"result\":[]}");
+		assertThat(this.listener.registry).isNull();
+		assertThat(this.listener.setupFailures).isEmpty();
+	}
+
+	@Test
+	void failedRegistrySubscriptionIsNotFatal() {
+		this.session.onMessage("{\"type\":\"auth_ok\"}");
+		this.session.onMessage("{\"id\":4,\"type\":\"result\",\"success\":false,\"error\":{\"message\":\"Unauthorized\"}}");
+		assertThat(this.listener.setupFailures).isEmpty();
+	}
+
+	@Test
+	void reloadsRegistriesWhenHomeAssistantSaysTheyChanged() {
+		this.session.onMessage("{\"type\":\"auth_ok\"}");
+		answerRegistries();
+		this.session.onMessage("{\"id\":4,\"type\":\"event\",\"event\":{\"event_type\":\"entity_registry_updated\",\"data\":{}}}");
+		assertThat(sent(7).path("type").asString("")).isEqualTo("config/entity_registry/list");
+		assertThat(sent(8).path("type").asString("")).isEqualTo("config/device_registry/list");
+	}
+
+	@Test
+	void coalescesRegistryReloadsWhileOneIsInFlight() {
+		this.session.onMessage("{\"type\":\"auth_ok\"}");
+		for (int i = 0; i < 5; i++) {
+			this.session.onMessage("{\"id\":5,\"type\":\"event\",\"event\":{\"event_type\":\"device_registry_updated\",\"data\":{}}}");
+		}
+		assertThat(this.sent).hasSize(7); // nothing new while the first load is in flight
+		answerRegistries();
+		assertThat(this.sent).hasSize(9); // exactly one reload afterwards
+	}
+
+	@Test
+	void doesNotReloadRegistriesAfterClose() {
+		this.session.onMessage("{\"type\":\"auth_ok\"}");
+		this.session.onMessage("{\"id\":5,\"type\":\"event\",\"event\":{\"event_type\":\"device_registry_updated\",\"data\":{}}}");
+		this.session.close();
+		assertThat(this.sent).hasSize(7);
+	}
+
+	private void answerRegistries() {
+		this.session.onMessage("""
+				{"id":6,"type":"result","success":true,"result":[{"entity_id":"sensor.lock_battery","device_id":"d1"}]}""");
+		this.session.onMessage("""
+				{"id":7,"type":"result","success":true,"result":[
+				  {"id":"d1","name":"Schlage BE469","name_by_user":"Back door lock"}]}""");
+	}
+
 	private JsonNode sent(int index) {
 		return this.mapper.readTree(this.sent.get(index));
 	}
@@ -184,6 +256,13 @@ class HaSessionTests {
 		final List<Throwable> setupFailures = new ArrayList<>();
 
 		ZoneId timeZone;
+
+		DeviceRegistry registry;
+
+		@Override
+		public void onRegistry(DeviceRegistry registry) {
+			this.registry = registry;
+		}
 
 		@Override
 		public void onTimeZone(ZoneId zone) {
