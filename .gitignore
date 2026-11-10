@@ -35,6 +35,7 @@ build/
 ### Frontend ###
 .node/
 src/main/frontend/node_modules/
+.vite/
 
 ### Local config ###
 config/application.yaml
