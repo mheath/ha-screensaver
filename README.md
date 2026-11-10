@@ -39,6 +39,8 @@ Set each tablet's screensaver URL to `https://<host>/?kiosk=<id>`, where `<id>` 
 
 The kiosks hold a Server-Sent Events connection open. The app sends a heartbeat every 15 s, so any `timeout server` / `timeout client` of 30 s or more is fine. Don't enable compression for `text/event-stream` — it buffers the stream.
 
+To refuse connections that don't come through HAProxy, list its address under `screensaver.access.allowed-addresses` (IP addresses or CIDR ranges). Anyone else gets a `403` explaining why, the connection is closed, and the refusal is logged. The check uses the TCP peer address, so an `X-Forwarded-For` header can't get around it. Anything that calls the app directly — such as a health monitor polling `/actuator/health` — needs to be on the list too. If the app sees every connection coming from a Docker bridge address (such as `172.17.0.1`), Docker's userland proxy is rewriting the source; check the address in the log line.
+
 ## Working on scenes
 
 ```bash

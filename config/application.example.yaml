@@ -5,6 +5,12 @@ screensaver:
     url: ws://homeassistant.lan:8123/api/websocket
     token: ${HA_TOKEN}
 
+  access:
+    # Only these hosts may connect; anyone else gets a 403 and a closed connection.
+    # IP addresses or CIDR ranges (no host names). Leave unset to allow everyone.
+    allowed-addresses:
+      - 192.168.1.1               # HAProxy
+
   clock:
     use-24-hour: false
 
@@ -59,3 +65,11 @@ screensaver:
     bedroom:
       scenes:
         snakes: { enabled: false }
+
+# Trust HAProxy's X-Forwarded-For / X-Forwarded-Proto headers (HAProxy needs
+# "option forwardfor"), so the app sees the real client and scheme. Proxies on private
+# addresses (10/8, 172.16/12, 192.168/16, ...) are trusted by default; for any other,
+# set server.tomcat.remoteip.internal-proxies to a regex matching its address.
+# screensaver.access.allowed-addresses still checks the proxy's own address.
+server:
+  forward-headers-strategy: native
