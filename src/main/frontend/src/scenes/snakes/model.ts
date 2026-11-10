@@ -15,6 +15,17 @@ const DY = [0, 1, 0, -1];
 /** Chance per step that a snake turns even though it could go straight. */
 const TURN_CHANCE = 0.12;
 
+/** Seconds a snake takes to shrink from its longest to its shortest. */
+const FULL_SHRINK_SECONDS = 2;
+
+/**
+ * Cells per second a too-long snake's tail retracts, on top of its normal movement,
+ * so a drop from `maxLength` to `minLength` takes {@link FULL_SHRINK_SECONDS}.
+ */
+export function tailCatchUpSpeed(minLength: number, maxLength: number): number {
+  return Math.max(1, maxLength - minLength) / FULL_SHRINK_SECONDS;
+}
+
 export function normalize(value: number, min: number, max: number): number {
   if (max <= min) {
     return 0;
@@ -30,6 +41,17 @@ export function targetLength(t: number, minLength: number, maxLength: number): n
 
 export function speedFor(t: number, minSpeed: number, maxSpeed: number): number {
   return lerp(minSpeed, maxSpeed, t);
+}
+
+/**
+ * Characters needed for the widest number {@link formatValue} shows for a value
+ * between `min` and `max`, so the legend can reserve room for it.
+ */
+export function widestValueChars(min: number, max: number, precision: number): number {
+  const integerDigits = Math.max(1, Math.floor(Math.max(Math.abs(min), Math.abs(max))).toString().length);
+  const decimals = precision > 0 ? precision + 1 : 0;
+  const sign = min < 0 ? 1 : 0;
+  return sign + integerDigits + decimals;
 }
 
 /** Legend value: at most `precision` decimals, trailing zeros dropped, unit if known. */
@@ -92,14 +114,22 @@ export class SnakeBody {
   readonly cells: Cell[];
   dir: Dir;
   private progress = 0;
+  private shrinkProgress = 0;
 
   constructor(start: Cell, dir: Dir) {
     this.cells = [start];
     this.dir = dir;
   }
 
-  /** Moves `seconds × speed` cells, growing toward or trimming to `targetLen`. */
-  advance(seconds: number, speed: number, targetLen: number, cols: number, rows: number, random: () => number): void {
+  /**
+   * Moves `seconds × speed` cells, growing toward `targetLen`. A snake longer than
+   * `targetLen` pulls its tail in at `shrinkSpeed` cells per second (see
+   * {@link tailCatchUpSpeed}), so it shrinks smoothly rather than all at once.
+   */
+  advance(
+    seconds: number, speed: number, targetLen: number, cols: number, rows: number, random: () => number,
+    shrinkSpeed: number,
+  ): void {
     this.progress += seconds * speed;
     while (this.progress >= 1) {
       this.progress -= 1;
@@ -108,7 +138,13 @@ export class SnakeBody {
         this.cells.pop();
       }
     }
-    while (this.cells.length > targetLen) {
+    if (this.cells.length <= targetLen) {
+      this.shrinkProgress = 0;
+      return;
+    }
+    this.shrinkProgress += seconds * shrinkSpeed;
+    while (this.shrinkProgress >= 1 && this.cells.length > targetLen) {
+      this.shrinkProgress -= 1;
       this.cells.pop();
     }
   }

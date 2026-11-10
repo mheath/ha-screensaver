@@ -12,3 +12,5 @@
   padding: 0.3em 0.8em 0.5em;
 }
 .snakes-scene .swatch { margin-right: 0.4em; }
+/* Holds a reserved width (set in ch) so changing values don't shift the entries after it. */
+.snakes-scene .legend-text { display: inline-block; }

@@ -3,7 +3,8 @@ import { PALETTE } from '../../palette';
 import type { Scene, SceneContext, SceneModule } from '../../scene';
 import type { SnakeDef, SnakeOptions, WorldState } from '../../types';
 import {
-  assignColors, formatValue, normalize, pickGuests, shade, SnakeBody, speedFor, targetLength, type Dir, type ShadeGlyph,
+  assignColors, formatValue, normalize, pickGuests, shade, SnakeBody, speedFor, tailCatchUpSpeed, targetLength,
+  widestValueChars, type Dir, type ShadeGlyph,
 } from './model';
 
 /** Text-mode width; cells are twice as tall as wide, like 80×25 characters. */
@@ -20,6 +21,8 @@ interface Entry {
   available: boolean;
   swatch: HTMLElement;
   text: HTMLElement;
+  /** Characters reserved for the text; it only grows, so changing values never shift the legend. */
+  textChars: number;
 }
 
 export const snakesModule: SceneModule = {
@@ -66,13 +69,16 @@ class SnakesScene implements Scene {
       swatch.className = 'swatch';
       swatch.textContent = '█▓▒░';
       const text = document.createElement('span');
+      text.className = 'legend-text';
       item.append(swatch, text);
       legend.append(item);
       return { def, swatch, text, color: PALETTE[colors.get(def.id) ?? 'light-gray'] };
     });
 
     // Fill the legend before measuring, so the snake field gets the remaining height.
-    this.entries = items.map((item) => ({ ...item, body: new SnakeBody({ x: 0, y: 0 }, 0), value: null, available: false }));
+    this.entries = items.map((item) => ({
+      ...item, body: new SnakeBody({ x: 0, y: 0 }, 0), value: null, available: false, textChars: 0,
+    }));
     this.applyState(ctx.state);
     this.layout();
     for (const entry of this.entries) {
@@ -99,7 +105,13 @@ class SnakesScene implements Scene {
       entry.value = current?.value ?? null;
       entry.available = !!current && current.available && current.value !== null;
       const unit = entry.def.unit ?? current?.unit ?? null;
-      entry.text.textContent = `${entry.def.label} (${formatValue(entry.value, unit, entry.def.precision, entry.available)})`;
+      const value = formatValue(entry.value, unit, entry.def.precision, entry.available);
+      const widest = '0'.repeat(widestValueChars(entry.def.min, entry.def.max, entry.def.precision));
+      const reserved = `${entry.def.label} (${unit ? `${widest} ${unit}` : widest})`;
+      const text = `${entry.def.label} (${value})`;
+      entry.textChars = Math.max(entry.textChars, reserved.length, text.length);
+      entry.text.textContent = text;
+      entry.text.style.minWidth = `${entry.textChars}ch`;
       entry.swatch.style.color = entry.available ? entry.color : UNAVAILABLE_COLOR;
     }
   }
@@ -156,6 +168,7 @@ class SnakesScene implements Scene {
         SEGMENT_COLUMNS,
         this.rows,
         this.random,
+        tailCatchUpSpeed(this.options.minLength, this.options.maxLength),
       );
     }
     this.draw();
