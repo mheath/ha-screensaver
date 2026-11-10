@@ -1,7 +1,7 @@
 import type { PaletteName } from './palette';
 
 /** Matches net.toadhead.ha.screensaver.config.SceneType ids. */
-export type SceneType = 'clock' | 'snakes' | 'calendar';
+export type SceneType = 'clock' | 'snakes' | 'calendar' | 'low-batteries';
 
 export interface SceneConfig {
   type: SceneType;
@@ -66,6 +66,16 @@ export interface WorldState {
   haConnected: boolean;
   snakes: SnakeValue[];
   calendar: { events: CalendarEvent[] };
+  lowBatteries: LowBattery[];
+}
+
+/** One battery that is dead or below the threshold (net.toadhead.ha.screensaver.batteries.LowBattery). */
+export interface LowBattery {
+  id: string;
+  name: string;
+  status: 'dead' | 'low';
+  /** Percent, or null for binary sensors that report no level. */
+  level: number | null;
 }
 
 /** One calendar event (net.toadhead.ha.screensaver.calendar.CalendarEvent). */
