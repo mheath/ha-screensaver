@@ -47,3 +47,16 @@ describe('demo calendar', () => {
     expect(DEMO_CONFIG.scenes.map((s) => s.type)).toContain('calendar');
   });
 });
+
+describe('demo batteries', () => {
+  it('lists the low-batteries scene', () => {
+    expect(DEMO_CONFIG.scenes.map((s) => s.type)).toContain('low-batteries');
+  });
+
+  it('shows a dead battery, a 0% battery, and a level-less low battery, in display order', () => {
+    const batteries = demoState(Date.now()).lowBatteries;
+    expect(batteries[0].status).toBe('dead');
+    expect(batteries.some((b) => b.status === 'low' && b.level === null)).toBe(true);
+    expect(batteries.some((b) => b.level === 0)).toBe(true);
+  });
+});

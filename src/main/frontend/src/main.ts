@@ -4,6 +4,7 @@ import { startDemo } from './demo';
 import { SceneHost } from './host';
 import { ReloadPolicy } from './reload';
 import type { SceneContext, SceneModule } from './scene';
+import { lowBatteriesModule } from './scenes/batteries/batteries';
 import { calendarModule } from './scenes/calendar/calendar';
 import { clockModule } from './scenes/clock/clock';
 import { snakesModule } from './scenes/snakes/snakes';
@@ -11,7 +12,12 @@ import { Scheduler, type Candidate } from './scheduler';
 import { openStream, type StreamHandlers } from './stream';
 import type { KioskConfig, SceneType, WorldState } from './types';
 
-const MODULES: Record<SceneType, SceneModule> = { clock: clockModule, snakes: snakesModule, calendar: calendarModule };
+const MODULES: Record<SceneType, SceneModule> = {
+  clock: clockModule,
+  snakes: snakesModule,
+  calendar: calendarModule,
+  'low-batteries': lowBatteriesModule,
+};
 const RETRY_MS = 5000;
 const FALLBACK_AFTER_MS = 5000;
 const FORCED_SCENE_MS = 60_000;
@@ -87,7 +93,7 @@ function showFallbackClock(): void {
     snakes: { guestCount: 0, minLength: 4, maxLength: 30, minSpeed: 2, maxSpeed: 20, pinned: [], guests: [] },
     calendar: { allDayUntil: '18:00', calendars: [] },
   };
-  host.show(clockModule.create(), context(fallback, state ?? { haConnected: false, snakes: [], calendar: { events: [] } }));
+  host.show(clockModule.create(), context(fallback, state ?? { haConnected: false, snakes: [], calendar: { events: [] }, lowBatteries: [] }));
   currentType = 'clock';
 }
 

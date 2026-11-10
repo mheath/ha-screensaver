@@ -1,6 +1,6 @@
 # HA Screensaver
 
-A screensaver for wall-mounted Fully Kiosk tablets: a Spring Boot app that connects to Home Assistant and rotates scenes in the browser. This version has the clock, the NetWare-style snakes, and today's (or tomorrow's) calendar. Design: `docs/superpowers/specs/2026-10-08-ha-screensaver-design.md` and `docs/superpowers/specs/2026-10-09-calendar-scene-design.md`.
+A screensaver for wall-mounted Fully Kiosk tablets: a Spring Boot app that connects to Home Assistant and rotates scenes in the browser. This version has the clock, the NetWare-style snakes, today's (or tomorrow's) calendar, and a list of low batteries. Design: `docs/superpowers/specs/2026-10-08-ha-screensaver-design.md`, `docs/superpowers/specs/2026-10-09-calendar-scene-design.md`, and `docs/superpowers/specs/2026-11-10-low-batteries-scene-design.md`.
 
 ## Build
 
@@ -27,6 +27,8 @@ docker run -d --name ha-screensaver -p 8080:8080 \
 
 `/srv/ha-screensaver/config/application.yaml` holds the `screensaver.*` settings — start from `config/application.example.yaml`. Create the token in Home Assistant under your profile → Security → Long-lived access tokens.
 
+The low-batteries scene lists devices whose battery is below `screensaver.batteries.threshold` (percent, default `10`) or has been unavailable for `screensaver.batteries.dead-after` (default `1h`). Entity ids under `screensaver.batteries.exclude` are never shown. The scene only appears while something qualifies; `config/application.example.yaml` has the details.
+
 Config is read at startup. After editing it, restart the container; every kiosk reloads itself once it reconnects. An invalid config stops startup with the validation errors in the container log.
 
 Health and build info: `/actuator/health`, `/actuator/info`.
@@ -49,7 +51,7 @@ npx vite
 ```
 
 - `http://localhost:5173/?demo` — canned data, no backend needed.
-- `?scene=snakes`, `?scene=clock`, or `?scene=calendar` — show only that scene.
+- `?scene=snakes`, `?scene=clock`, `?scene=calendar`, or `?scene=low-batteries` — show only that scene.
 - Without `?demo`, the dev server proxies `/api` to a Boot app on `localhost:8080`.
 
 The small orange dot in the bottom-right corner means the kiosk has lost the stream or the backend has lost Home Assistant.

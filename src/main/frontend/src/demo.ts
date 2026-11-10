@@ -8,6 +8,7 @@ export const DEMO_CONFIG: KioskConfig = {
     { type: 'clock', weight: 1, durationMs: 15_000 },
     { type: 'snakes', weight: 2, durationMs: 30_000 },
     { type: 'calendar', weight: 2, durationMs: 20_000 },
+    { type: 'low-batteries', weight: 2, durationMs: 20_000 },
   ],
   clock: { use24Hour: false },
   snakes: {
@@ -48,6 +49,14 @@ export function demoState(timeMs: number): WorldState {
       { id: 'people-home', value: null, unit: null, available: false },
     ],
     calendar: { events: demoCalendar(timeMs) },
+    lowBatteries: [
+      { id: 'lock', name: 'Back door lock', status: 'dead', level: null },
+      { id: 'tilt', name: 'Garage tilt sensor', status: 'dead', level: null },
+      { id: 'remote', name: 'Hall remote', status: 'low', level: null },
+      { id: 'motion', name: 'Kitchen motion sensor', status: 'low', level: 0 },
+      { id: 'leak', name: 'Basement leak sensor', status: 'low', level: 6 },
+      { id: 'contact', name: 'Front door contact', status: 'low', level: 9 },
+    ],
   };
 }
 

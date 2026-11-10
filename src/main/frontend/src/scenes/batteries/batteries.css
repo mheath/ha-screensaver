@@ -1,0 +1,31 @@
+/* Modern look on purpose: the DOS text-mode style belongs to snakes and the clock. */
+.low-batteries-scene {
+  position: absolute; inset: 0; box-sizing: border-box;
+  display: flex; flex-direction: column;
+  padding: 5vmin 6vmin 4vmin;
+  color: #ffffff;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(160deg, #10302c 0%, #1c2348 100%);
+}
+
+.low-batteries-scene .heading { margin: 0 0 3vmin; font-size: 6vmin; font-weight: 700; }
+
+.low-batteries-scene .grid {
+  flex: 1; display: grid; align-content: center; align-items: start;
+  grid-template-columns: repeat(var(--count, 1), 1fr);
+  gap: 3vmin 2vmin;
+}
+
+.low-batteries-scene .battery { display: flex; flex-direction: column; align-items: center; min-width: 0; }
+.low-batteries-scene .battery svg { width: 11vmin; height: auto; }
+.low-batteries-scene .two-rows .battery svg { width: 8vmin; }
+
+.low-batteries-scene .name {
+  margin-top: 1vmin; max-width: 100%; text-align: center;
+  font-size: 2.6vmin; font-weight: 600; line-height: 1.25;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.low-batteries-scene .two-rows .name { font-size: 2vmin; }
+
+.low-batteries-scene .more { text-align: right; font-size: 2.4vmin; color: rgba(255, 255, 255, 0.6); }
