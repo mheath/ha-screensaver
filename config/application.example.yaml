@@ -56,11 +56,18 @@ screensaver:
         entity: calendar.school
         label: School             # no color: the first unused one is assigned
 
+  batteries:
+    threshold: 10            # percent; strictly below this counts as low
+    dead-after: 1h           # how long a battery must stay unavailable to count as dead
+    exclude:                 # battery entity ids never shown (a phone reports its own battery)
+      - sensor.phone_battery_level
+
   rotation:
     scenes:
       clock: { weight: 2, duration: 20s }
       snakes: { weight: 2, duration: 45s }
       calendar: { weight: 2, duration: 20s }
+      low-batteries: { weight: 3, duration: 20s }
 
   kiosks:
     bedroom:

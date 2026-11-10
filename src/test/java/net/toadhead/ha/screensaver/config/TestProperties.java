@@ -3,8 +3,10 @@ package net.toadhead.ha.screensaver.config;
 import java.net.URI;
 import java.time.Duration;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Map;
 
+import net.toadhead.ha.screensaver.config.ScreensaverProperties.Batteries;
 import net.toadhead.ha.screensaver.config.ScreensaverProperties.Calendar;
 import net.toadhead.ha.screensaver.config.ScreensaverProperties.Clock;
 import net.toadhead.ha.screensaver.config.ScreensaverProperties.HomeAssistant;
@@ -33,9 +35,14 @@ public final class TestProperties {
 		return new Calendar(LocalTime.of(18, 0), Map.of());
 	}
 
+	public static Batteries defaultBatteries() {
+		return new Batteries(10, Duration.ofHours(1), List.of());
+	}
+
 	public static ScreensaverProperties withSnakes(Map<String, Snake> pinned, Map<String, Snake> guests) {
 		return new ScreensaverProperties(homeAssistant(), new Clock(false),
-				new Snakes(0, 4, 30, 2, 20, pinned, guests), noCalendars(), new Rotation(Map.of()), Map.of());
+				new Snakes(0, 4, 30, 2, 20, pinned, guests), noCalendars(), defaultBatteries(),
+				new Rotation(Map.of()), Map.of());
 	}
 
 }

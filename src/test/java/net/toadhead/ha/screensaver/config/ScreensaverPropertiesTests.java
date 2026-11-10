@@ -146,6 +146,42 @@ class ScreensaverPropertiesTests {
 	}
 
 	@Test
+	void bindsBatteryDefaults() {
+		this.runner.run((context) -> {
+			ScreensaverProperties.Batteries batteries = context.getBean(ScreensaverProperties.class).batteries();
+			assertThat(batteries.threshold()).isEqualTo(10);
+			assertThat(batteries.deadAfter()).isEqualTo(Duration.ofHours(1));
+			assertThat(batteries.exclude()).isEmpty();
+		});
+	}
+
+	@Test
+	void bindsBatterySettings() {
+		this.runner
+			.withPropertyValues("screensaver.batteries.threshold=15", "screensaver.batteries.dead-after=30m",
+					"screensaver.batteries.exclude[0]=sensor.phone_battery_level",
+					"screensaver.rotation.scenes.low-batteries.weight=4")
+			.run((context) -> {
+				ScreensaverProperties properties = context.getBean(ScreensaverProperties.class);
+				assertThat(properties.batteries().threshold()).isEqualTo(15);
+				assertThat(properties.batteries().deadAfter()).isEqualTo(Duration.ofMinutes(30));
+				assertThat(properties.batteries().exclude()).containsExactly("sensor.phone_battery_level");
+				assertThat(properties.rotation().scenes().get(SceneType.LOW_BATTERIES).weight()).isEqualTo(4.0);
+			});
+	}
+
+	@Test
+	void rejectsThresholdOutOfRange() {
+		assertFails("must be greater than or equal to 1", "screensaver.batteries.threshold=0");
+		assertFails("must be less than or equal to 100", "screensaver.batteries.threshold=101");
+	}
+
+	@Test
+	void rejectsNonPositiveDeadAfter() {
+		assertFails("dead-after must be positive", "screensaver.batteries.dead-after=0s");
+	}
+
+	@Test
 	void rejectsPrecisionAboveFour() {
 		assertFails("must be less than or equal to 4", snake("pinned", "a", "precision=5"));
 	}

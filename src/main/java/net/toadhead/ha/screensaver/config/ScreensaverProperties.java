@@ -30,13 +30,15 @@ import org.springframework.validation.annotation.Validated;
  * @param clock clock scene options
  * @param snakes snakes scene options
  * @param calendar calendar scene options
+ * @param batteries low-batteries scene options
  * @param rotation default weight, duration and enablement for each scene type
  * @param kiosks per-kiosk overrides keyed by the {@code ?kiosk=} id
  */
 @ConfigurationProperties("screensaver")
 @Validated
 public record ScreensaverProperties(@Valid @NotNull HomeAssistant homeAssistant, @Valid @DefaultValue Clock clock,
-		@Valid @DefaultValue Snakes snakes, @Valid @DefaultValue Calendar calendar, @Valid @DefaultValue Rotation rotation,
+		@Valid @DefaultValue Snakes snakes, @Valid @DefaultValue Calendar calendar,
+		@Valid @DefaultValue Batteries batteries, @Valid @DefaultValue Rotation rotation,
 		Map<String, @Valid Kiosk> kiosks) {
 
 	/** Every palette color except black can be a snake. */
@@ -176,6 +178,27 @@ public record ScreensaverProperties(@Valid @NotNull HomeAssistant homeAssistant,
 	 * @param color event color, or {@code null} to assign one automatically
 	 */
 	public record CalendarEntry(@NotBlank String entity, @NotBlank String label, CalendarColor color) {
+
+	}
+
+	/**
+	 * Low-batteries scene options.
+	 *
+	 * @param threshold percent; a battery strictly below this counts as low
+	 * @param deadAfter how long a battery must stay unavailable to count as dead
+	 * @param exclude battery entity ids that are never shown
+	 */
+	public record Batteries(@DefaultValue("10") @Min(1) @Max(100) int threshold,
+			@DefaultValue("1h") Duration deadAfter, List<String> exclude) {
+
+		public Batteries {
+			exclude = (exclude != null) ? List.copyOf(exclude) : List.of();
+		}
+
+		@AssertTrue(message = "dead-after must be positive")
+		public boolean isDeadAfterPositive() {
+			return this.deadAfter == null || (!this.deadAfter.isNegative() && !this.deadAfter.isZero());
+		}
 
 	}
 
