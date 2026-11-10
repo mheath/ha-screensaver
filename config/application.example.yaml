@@ -15,6 +15,7 @@ screensaver:
     use-24-hour: false
 
   snakes:
+    # At most this many guests appear alongside the pinned snakes, picked at random.
     guest-count: 2
     pinned:
       internet-download:

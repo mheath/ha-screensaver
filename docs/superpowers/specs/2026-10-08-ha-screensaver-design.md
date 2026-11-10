@@ -178,7 +178,7 @@ interface Scene {
 
 **Snakes (NetWare tribute)**
 - A text-mode character grid on canvas, sized to give roughly 80 columns, using a DOS/VGA-style font. Each snake's head is `█` and its body fades through `▓ ▒ ░` toward the tail.
-- **Pinned** snakes always appear. `guest-count` additional snakes are drawn at random from the **guest** pool each appearance.
+- **Pinned** snakes always appear. Up to `guest-count` additional snakes are drawn at random from the **guest** pool each appearance; a smaller pool shows all of its snakes, and an empty one shows none.
 - For each snake, value → `t = clamp((value − min) / (max − min), 0, 1)`; length and speed are linear interpolations from configured min/max length and speed by `t`. Values update live while the scene is on screen.
 - Movement: wanders the grid at its speed, never reversing, turning at walls, occasionally changing direction at random.
 - **Palette:** the 16-color text-mode palette. Black (0) is the background, which leaves 15 snake colors. Configured colors are honored for pinned snakes. Guest snakes without a color, or whose color is already on screen, get an unused color, preferring the 13 brighter colors before dark blue and dark gray. No two snakes on screen share a color.
@@ -340,7 +340,7 @@ screensaver:
 ### 6.2 Notes and validation
 
 - **Colors** are the 16 text-mode palette names: `black, blue, green, cyan, red, magenta, brown, light-gray, dark-gray, light-blue, light-green, light-cyan, light-red, light-magenta, yellow, white`. `black` is rejected for snakes.
-- **Snakes:** each needs `min < max`; pinned snakes must have distinct colors; pinned count + `guest-count` ≤ 15; `guest-count` ≤ guest pool size. Optional `unit` overrides the entity's unit in the legend; optional `precision` (0–4, default 1) sets the maximum decimals.
+- **Snakes:** each needs `min < max`; pinned snakes must have distinct colors; pinned count + guests shown (the smaller of `guest-count` and the guest pool size) ≤ 15. Optional `unit` overrides the entity's unit in the legend; optional `precision` (0–4, default 1) sets the maximum decimals.
 - **Alerts:** each needs `title`, `icon`, and at least one condition. An alert may set its own `weight` to override `rotation.scenes.alert.weight`.
 - **Kiosks:** the `kiosks.<id>` keys are the values used in `?kiosk=`. `disabled-alerts` entries must name existing alerts. Scene overrides may set `enabled`, `weight`, and `duration`.
 - **Scene types** are a fixed enum; unknown keys under `rotation.scenes` or `kiosks.*.scenes` fail validation.

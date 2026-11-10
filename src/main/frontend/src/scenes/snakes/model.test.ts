@@ -79,6 +79,12 @@ describe('pickGuests', () => {
     expect(new Set(picked.map((g) => g.id)).size).toBe(2);
   });
 
+  it('picks every guest when asked for more than there are', () => {
+    const guests = ['a', 'b'].map((id) => def(id));
+    expect(pickGuests(guests, 4, mulberry32(4)).map((g) => g.id).sort()).toEqual(['a', 'b']);
+    expect(pickGuests([], 4, mulberry32(4))).toEqual([]);
+  });
+
   it('varies between appearances', () => {
     const guests = ['a', 'b', 'c', 'd', 'e'].map((id) => def(id));
     const random = mulberry32(11);

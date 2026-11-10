@@ -92,10 +92,29 @@ class ScreensaverPropertiesTests {
 	}
 
 	@Test
-	void rejectsGuestCountLargerThanPool() {
+	void acceptsGuestCountWithNoGuests() {
+		this.runner.withPropertyValues("screensaver.snakes.guest-count=4")
+			.run((context) -> assertThat(context).hasNotFailed());
+	}
+
+	@Test
+	void acceptsGuestCountLargerThanPool() {
 		List<String> props = new ArrayList<>(snake("guests", "a"));
 		props.add("screensaver.snakes.guest-count=2");
-		assertFails("guest-count must not exceed the number of guest snakes", props);
+		this.runner.withPropertyValues(props.toArray(String[]::new))
+			.run((context) -> assertThat(context).hasNotFailed());
+	}
+
+	@Test
+	void countsOnlyGuestsThatCanAppearAgainstThePalette() {
+		List<String> props = new ArrayList<>();
+		for (int i = 0; i < 14; i++) {
+			props.addAll(snake("pinned", "s" + i));
+		}
+		props.addAll(snake("guests", "g"));
+		props.add("screensaver.snakes.guest-count=4");
+		this.runner.withPropertyValues(props.toArray(String[]::new))
+			.run((context) -> assertThat(context).hasNotFailed());
 	}
 
 	@Test
@@ -104,6 +123,18 @@ class ScreensaverPropertiesTests {
 		for (int i = 0; i < 16; i++) {
 			props.addAll(snake("pinned", "s" + i));
 		}
+		assertFails("must not exceed 15", props);
+	}
+
+	@Test
+	void rejectsMoreGuestsShownThanColorsLeft() {
+		List<String> props = new ArrayList<>();
+		for (int i = 0; i < 14; i++) {
+			props.addAll(snake("pinned", "s" + i));
+		}
+		props.addAll(snake("guests", "g1"));
+		props.addAll(snake("guests", "g2"));
+		props.add("screensaver.snakes.guest-count=2");
 		assertFails("must not exceed 15", props);
 	}
 

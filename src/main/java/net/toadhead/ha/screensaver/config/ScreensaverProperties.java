@@ -95,14 +95,10 @@ public record ScreensaverProperties(@Valid @NotNull HomeAssistant homeAssistant,
 			return colors.size() == new HashSet<>(colors).size();
 		}
 
-		@AssertTrue(message = "pinned snakes plus guest-count must not exceed 15 (one per palette color)")
+		@AssertTrue(message = "pinned snakes plus guests shown must not exceed 15 (one per palette color)")
 		public boolean isWithinPalette() {
-			return this.pinned.size() + this.guestCount <= MAX_SNAKES;
-		}
-
-		@AssertTrue(message = "guest-count must not exceed the number of guest snakes")
-		public boolean isGuestCountWithinPool() {
-			return this.guestCount <= this.guests.size();
+			// guest-count is a maximum: no more guests are shown than are configured.
+			return this.pinned.size() + Math.min(this.guestCount, this.guests.size()) <= MAX_SNAKES;
 		}
 
 		@AssertTrue(message = "snake ids must be unique across pinned and guests")
